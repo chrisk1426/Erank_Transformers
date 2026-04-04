@@ -1,2 +1,42 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ML artifacts
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Data
+data/
+
+# Outputs
+figures/
+results/
+
+# System
+.DS_Store
+.env
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+
 timeline_thesis_march.pdf
 week1_implementation_plan.md
