@@ -41,9 +41,8 @@ def generate_key_value_data(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Generate random key-value retrieval examples.
-
-    For each example, each key is assigned a random value. One key is chosen
-    as the query; the label is its associated value.
+    For each example, each key is assigned a random value. 
+    Per example, the query key chooses 1 key to retrieve its value from.
 
     Args:
         num_keys: Number of distinct keys (and key-value pairs per sequence).
@@ -52,7 +51,7 @@ def generate_key_value_data(
         seed: Random seed for reproducibility.
 
     Returns:
-        inputs: LongTensor of shape (num_examples, 2*num_keys + 1).
+        inputs: LongTensor of shape (num_examples, 2*num_keys + 1). 
         labels: LongTensor of shape (num_examples,) — value token for the queried key.
     """
     torch.manual_seed(seed)
@@ -71,7 +70,9 @@ def generate_key_value_data(
     # Random query key index for each example.
     query_key_idx = torch.randint(0, num_keys, (num_examples,), dtype=torch.long)
 
-    # Build input sequences.
+    # Input sequences.
+    # input sequences are the key-value pairs followed by the query key.
+    # the query key is the last token in the sequence.
     inputs = torch.zeros((num_examples, seq_len), dtype=torch.long)
     for k in range(num_keys):
         inputs[:, 2 * k] = key_offset + k   # key token (fixed per slot)
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     print(f"inputs dtype:  {inputs.dtype}")
     print(f"labels dtype:  {labels.dtype}\n")
 
-    # 2. Assert label correctness: label must equal the value at the query key's position.
+    # 2. Assert label correctness: label must equal the value at the query key's position. 
     query_key_tokens = inputs[:, -1]                          # last column = query key token
     query_key_idx = query_key_tokens - vocab_size             # convert to key index 0..num_keys-1
     value_col_idx = 2 * query_key_idx + 1                    # column in inputs where value lives
@@ -163,11 +164,11 @@ if __name__ == "__main__":
     assert torch.all(labels == retrieved), "Label mismatch: labels do not match retrieved values"
     print("Label correctness: PASSED")
 
-    # 3. Assert sequence lengths.
+    # 3. Assert sequence lengths. (the width of the input tensor should be the sequence length)
     assert inputs.shape[1] == seq_len, f"Expected seq_len={seq_len}, got {inputs.shape[1]}"
     print(f"Sequence length ({seq_len}): PASSED")
 
-    # 4. Assert token bounds.
+    # 4. Assert token bounds. (the tokens should be within the valid range keys + vocab size)
     total_vocab = vocab_size + num_keys
     assert int(inputs.min()) >= 0 and int(inputs.max()) < total_vocab, (
         f"Input tokens out of bounds [0, {total_vocab})"
@@ -177,7 +178,7 @@ if __name__ == "__main__":
     )
     print(f"Token bounds [0, {total_vocab}) and labels [0, {vocab_size}): PASSED")
 
-    # 5. Build DataLoaders and check split sizes.
+    # 5. Build DataLoaders and verify the split size (70/30 train/test split).
     train_loader, test_loader = get_key_value_dataloaders(
         num_keys=num_keys, vocab_size=vocab_size, num_examples=num_examples
     )

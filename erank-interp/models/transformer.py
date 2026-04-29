@@ -41,6 +41,15 @@ def _make_cfg_dict(task: str, seed: int, cfg_overrides: dict) -> dict:
     """
     device = _get_device()
 
+    # modular addition
+    # n_ctx = 3
+    # d_vocab = p + 1
+    # d_vocab_out = p
+
+    # key-value retrieval
+    # n_ctx = 2 * num_keys + 1
+    # d_vocab = vocab_size + num_keys
+    # d_vocab_out = vocab_size
     if task == "modular_addition":
         p = cfg_overrides.pop("mod_p", 113)
         task_fields = dict(
@@ -59,6 +68,17 @@ def _make_cfg_dict(task: str, seed: int, cfg_overrides: dict) -> dict:
     else:
         raise ValueError(f"Unknown task: {task!r}. Expected 'modular_addition' or 'key_value'.")
 
+    # default config
+    # n_layers = 2
+    # d_model = 128
+    # n_heads = 4
+    # d_head = 32
+    # d_mlp = 512
+    # act_fn = "gelu"
+    # normalization_type = None
+    # seed = seed
+    # device = device
+    # **task_fields
     cfg_dict = dict(
         n_layers=2,
         d_model=128,

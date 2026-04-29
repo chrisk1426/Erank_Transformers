@@ -1,0 +1,5 @@
+run,checkpoint_type,epoch,sum_delta_attn,sum_delta_mlp,final_val_acc,final_test_acc
+standard_modular_addition,best_val,5886,17.30533108357948,6.542594629138464,1.0,1.0
+standard_key_value,best_val,506,6.549629703354006,-2.764281636966999,1.0,1.0
+attention_only_modular_addition,best_val,31609,63.07175723728979,0.0,0.015665796344647518,0.004922250811052691
+attention_only_key_value,best_val,512,6.008974907716889,0.0,1.0,1.0

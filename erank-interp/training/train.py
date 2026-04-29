@@ -157,6 +157,9 @@ def train(
         "test_loss": [],
         "train_acc": [],
         "test_acc": [],
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "task_name": task_name,
     }
 
     consecutive_high_acc = 0
@@ -207,7 +210,7 @@ def train(
             break
 
     # Save final checkpoint.
-    final_path = os.path.join(checkpoint_dir, f"{task_name}_final.pt")
+    final_path = os.path.join(checkpoint_dir, f"{task_name}_epoch{history['epoch'][-1]}_final.pt")
     torch.save(
         {
             "model_state_dict": model.state_dict(),

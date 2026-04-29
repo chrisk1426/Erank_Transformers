@@ -56,10 +56,10 @@ def generate_modular_addition_data(
     # Create a column of EQUALS_TOKEN tokens for each example.
     eq_col = torch.full((p * p,), p, dtype=torch.long)  # EQUALS_TOKEN = p
 
-    # Stack the operands and EQUALS_TOKEN tokens into a single tensor.
+    # Concatenate the operands and EQUALS_TOKEN tokens into a single tensor.
     inputs = torch.stack([a_flat, b_flat, eq_col], dim=1)  # shape (p*p, 3)
 
-    # Compute the labels as (a + b) % p for each example.
+    # Modular addition labels.
     labels = (a_flat + b_flat) % p                          # shape (p*p,)
 
     return inputs, labels

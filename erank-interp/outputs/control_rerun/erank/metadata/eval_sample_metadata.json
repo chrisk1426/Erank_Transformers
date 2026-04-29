@@ -1,0 +1,34 @@
+{
+  "standard_modular_addition": {
+    "n_examples_requested": 1000,
+    "n_examples_used": 766,
+    "n_val_available": 766,
+    "seed": 42,
+    "checkpoint_path": "/scratch/f006j44/erank/erank-interp/outputs/control_rerun/checkpoints/standard_modular_addition_best_val.pt",
+    "epoch": 5886
+  },
+  "standard_key_value": {
+    "n_examples_requested": 1000,
+    "n_examples_used": 1000,
+    "n_val_available": 1400,
+    "seed": 42,
+    "checkpoint_path": "/scratch/f006j44/erank/erank-interp/outputs/control_rerun/checkpoints/standard_key_value_best_val.pt",
+    "epoch": 506
+  },
+  "attention_only_modular_addition": {
+    "n_examples_requested": 1000,
+    "n_examples_used": 766,
+    "n_val_available": 766,
+    "seed": 42,
+    "checkpoint_path": "/scratch/f006j44/erank/erank-interp/outputs/control_rerun/checkpoints/attention_only_modular_addition_best_val.pt",
+    "epoch": 31609
+  },
+  "attention_only_key_value": {
+    "n_examples_requested": 1000,
+    "n_examples_used": 1000,
+    "n_val_available": 1400,
+    "seed": 42,
+    "checkpoint_path": "/scratch/f006j44/erank/erank-interp/outputs/control_rerun/checkpoints/attention_only_key_value_best_val.pt",
+    "epoch": 512
+  }
+}
