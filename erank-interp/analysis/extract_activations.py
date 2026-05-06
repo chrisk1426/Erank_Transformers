@@ -68,7 +68,7 @@ def _pred_position(task_name: str, n_ctx: int) -> int:
     """Return the sequence position index to extract activations from."""
     if task_name == "modular_addition":
         return 2
-    elif task_name == "key_value":
+    elif task_name in ("key_value", "hybrid_retrieve_add"):
         return n_ctx - 1  # last token
     else:
         raise ValueError(f"Unknown task_name: {task_name!r}")

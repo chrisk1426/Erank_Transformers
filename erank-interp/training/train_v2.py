@@ -37,7 +37,9 @@ sys.path.insert(0, PROJECT_ROOT)
 def _get_logits_at_pred_position(logits: torch.Tensor, task_name: str) -> torch.Tensor:
     if task_name == "modular_addition":
         return logits[:, 2, :]
-    elif task_name == "key_value":
+    elif task_name in ("key_value", "hybrid_retrieve_add"):
+        # key_value: last token is the query key
+        # hybrid_retrieve_add: last token is the EQ token (prediction position)
         return logits[:, -1, :]
     else:
         raise ValueError(f"Unknown task_name: {task_name!r}")

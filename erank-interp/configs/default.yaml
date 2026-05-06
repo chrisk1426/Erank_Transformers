@@ -14,6 +14,12 @@ kv_num_keys: 5
 kv_vocab_size: 30
 kv_train_frac: 0.7
 
+# Hybrid Retrieve-Then-Add Task
+hybrid_p: 113
+hybrid_num_kv_pairs: 4
+hybrid_num_examples: 20000
+hybrid_train_frac: 0.7
+
 # Training
 batch_size: 256
 learning_rate: 0.0003

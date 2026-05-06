@@ -3,9 +3,11 @@ models/transformer.py
 
 Model configuration and factory functions for erank-interp.
 
-Creates tiny HookedTransformers via TransformerLens for both tasks:
-  - modular_addition: context [a, b, =], vocab 114, output 113
-  - key_value:        context [k0,v0,...,kN,vN,QUERY], vocab vocab_size+num_keys
+Creates tiny HookedTransformers via TransformerLens for all tasks:
+  - modular_addition:      context [a, b, =], vocab 114, output 113
+  - key_value:             context [k0,v0,...,kN,vN,QUERY], vocab vocab_size+num_keys
+  - hybrid_retrieve_add:   context [k0,v0,...,km,vm,QUERY,q1,q2,EQ],
+                           vocab p+num_kv_pairs+2, output p
 """
 
 from __future__ import annotations
@@ -65,8 +67,21 @@ def _make_cfg_dict(task: str, seed: int, cfg_overrides: dict) -> dict:
             d_vocab=vocab_size + num_keys,
             d_vocab_out=vocab_size,
         )
+    elif task == "hybrid_retrieve_add":
+        p = cfg_overrides.pop("hybrid_p", 113)
+        num_kv_pairs = cfg_overrides.pop("hybrid_num_kv_pairs", 4)
+        # seq: [k0,v0,...,km-1,vm-1, QUERY, q1_key, q2_key, EQ]
+        # d_vocab: p values + num_kv_pairs keys + QUERY + EQ
+        task_fields = dict(
+            n_ctx=2 * num_kv_pairs + 4,
+            d_vocab=p + num_kv_pairs + 2,
+            d_vocab_out=p,
+        )
     else:
-        raise ValueError(f"Unknown task: {task!r}. Expected 'modular_addition' or 'key_value'.")
+        raise ValueError(
+            f"Unknown task: {task!r}. "
+            "Expected 'modular_addition', 'key_value', or 'hybrid_retrieve_add'."
+        )
 
     # default config
     # n_layers = 2

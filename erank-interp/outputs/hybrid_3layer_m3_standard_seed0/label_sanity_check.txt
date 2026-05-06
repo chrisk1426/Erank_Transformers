@@ -1,0 +1,167 @@
+============================================================
+LABEL SANITY CHECK — 20 examples
+============================================================
+
+Example 1:
+  context: [114, 41, 113, 97, 115, 59, 116, 114, 115, 117]
+  q1_key: 114  q2_key: 115
+  v(q1): 41  v(q2): 59
+  expected label: 100
+  actual label:   100
+  PASS
+
+Example 2:
+  context: [113, 108, 114, 56, 115, 64, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 56  v(q2): 108
+  expected label: 51
+  actual label:   51
+  PASS
+
+Example 3:
+  context: [113, 83, 114, 103, 115, 56, 116, 113, 114, 117]
+  q1_key: 113  q2_key: 114
+  v(q1): 83  v(q2): 103
+  expected label: 73
+  actual label:   73
+  PASS
+
+Example 4:
+  context: [113, 68, 115, 91, 114, 13, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 13  v(q2): 68
+  expected label: 81
+  actual label:   81
+  PASS
+
+Example 5:
+  context: [113, 58, 115, 14, 114, 25, 116, 114, 115, 117]
+  q1_key: 114  q2_key: 115
+  v(q1): 25  v(q2): 14
+  expected label: 39
+  actual label:   39
+  PASS
+
+Example 6:
+  context: [115, 19, 113, 60, 114, 72, 116, 115, 113, 117]
+  q1_key: 115  q2_key: 113
+  v(q1): 19  v(q2): 60
+  expected label: 79
+  actual label:   79
+  PASS
+
+Example 7:
+  context: [113, 96, 114, 96, 115, 59, 116, 115, 114, 117]
+  q1_key: 115  q2_key: 114
+  v(q1): 59  v(q2): 96
+  expected label: 42
+  actual label:   42
+  PASS
+
+Example 8:
+  context: [113, 82, 114, 105, 115, 101, 116, 113, 114, 117]
+  q1_key: 113  q2_key: 114
+  v(q1): 82  v(q2): 105
+  expected label: 74
+  actual label:   74
+  PASS
+
+Example 9:
+  context: [115, 67, 114, 102, 113, 69, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 102  v(q2): 69
+  expected label: 58
+  actual label:   58
+  PASS
+
+Example 10:
+  context: [113, 99, 114, 60, 115, 111, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 60  v(q2): 99
+  expected label: 46
+  actual label:   46
+  PASS
+
+Example 11:
+  context: [113, 110, 114, 15, 115, 51, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 15  v(q2): 110
+  expected label: 12
+  actual label:   12
+  PASS
+
+Example 12:
+  context: [115, 111, 114, 108, 113, 9, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 108  v(q2): 9
+  expected label: 4
+  actual label:   4
+  PASS
+
+Example 13:
+  context: [114, 0, 113, 34, 115, 95, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 0  v(q2): 34
+  expected label: 34
+  actual label:   34
+  PASS
+
+Example 14:
+  context: [113, 68, 115, 18, 114, 56, 116, 114, 113, 117]
+  q1_key: 114  q2_key: 113
+  v(q1): 56  v(q2): 68
+  expected label: 11
+  actual label:   11
+  PASS
+
+Example 15:
+  context: [115, 94, 113, 28, 114, 48, 116, 115, 114, 117]
+  q1_key: 115  q2_key: 114
+  v(q1): 94  v(q2): 48
+  expected label: 29
+  actual label:   29
+  PASS
+
+Example 16:
+  context: [113, 40, 114, 22, 115, 45, 116, 113, 115, 117]
+  q1_key: 113  q2_key: 115
+  v(q1): 40  v(q2): 45
+  expected label: 85
+  actual label:   85
+  PASS
+
+Example 17:
+  context: [113, 55, 115, 84, 114, 6, 116, 114, 115, 117]
+  q1_key: 114  q2_key: 115
+  v(q1): 6  v(q2): 84
+  expected label: 90
+  actual label:   90
+  PASS
+
+Example 18:
+  context: [115, 1, 113, 99, 114, 55, 116, 115, 113, 117]
+  q1_key: 115  q2_key: 113
+  v(q1): 1  v(q2): 99
+  expected label: 100
+  actual label:   100
+  PASS
+
+Example 19:
+  context: [114, 52, 113, 87, 115, 96, 116, 115, 114, 117]
+  q1_key: 115  q2_key: 114
+  v(q1): 96  v(q2): 52
+  expected label: 35
+  actual label:   35
+  PASS
+
+Example 20:
+  context: [115, 50, 114, 63, 113, 6, 116, 115, 114, 117]
+  q1_key: 115  q2_key: 114
+  v(q1): 50  v(q2): 63
+  expected label: 0
+  actual label:   0
+  PASS
+
+============================================================
+VERDICT: ALL 20 PASSED
+============================================================

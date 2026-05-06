@@ -1,0 +1,14 @@
+{
+  "task": "key_value",
+  "num_keys": 5,
+  "vocab_size": 30,
+  "num_examples": 10000,
+  "n_total": 10000,
+  "n_train": 5600,
+  "n_val": 1400,
+  "n_test": 3000,
+  "train_frac": 0.7,
+  "val_frac_of_train": 0.2,
+  "seed": 1,
+  "sub_split_seed": 2
+}
