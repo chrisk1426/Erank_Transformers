@@ -1,0 +1,17 @@
+{
+  "run_id": "depth4_control_AAAAAAAA",
+  "schedule": "AAAAAAAA",
+  "depth": 4,
+  "n_blocks": 8,
+  "n_params": 557824,
+  "best_val_acc": 1.0,
+  "best_val_epoch": 20550,
+  "test_acc_at_best_val": 1.0,
+  "test_loss_at_best_val": 0.012086779437959194,
+  "final_train_acc": 0.6455613577023499,
+  "final_val_acc": 0.14360313315926893,
+  "final_epoch": 41450,
+  "grokking_tau": 20225,
+  "status": "GROKKED",
+  "elapsed_seconds": 16428.35504078865
+}

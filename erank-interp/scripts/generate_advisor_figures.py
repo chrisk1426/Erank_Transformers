@@ -1,18 +1,3 @@
-"""
-scripts/generate_advisor_figures.py
-
-Generate advisor-ready figures from completed seed-robust results.
-
-Reads eRank JSON files and accuracy data directly from completed run outputs.
-No model loading required.
-
-Outputs:
-  outputs/advisor_core_figures/core_accuracy_summary.png
-  outputs/advisor_core_figures/core_erank_totals.png
-  outputs/advisor_core_figures/modular_layerwise_erank.png
-  outputs/advisor_core_figures/figure_inventory.md
-"""
-
 from __future__ import annotations
 
 import json
@@ -281,6 +266,116 @@ def plot_modular_layerwise(rows: list[dict], out_dir: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Figure 4: Key-value layerwise eRank (standard only)
+# ---------------------------------------------------------------------------
+
+def plot_kv_layerwise(rows: list[dict], out_dir: str) -> str:
+    task = "key_value"
+    arch = "standard"
+
+    kv_rows = [r for r in rows if r["task"] == task and r["arch"] == arch]
+    fields_labels = [
+        ("l0_da", "L0 Δ_attn", "#2196F3"),
+        ("l0_dm", "L0 Δ_mlp",  "#FF9800"),
+        ("l1_da", "L1 Δ_attn", "#1565C0"),
+        ("l1_dm", "L1 Δ_mlp",  "#E65100"),
+    ]
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    n_fields = len(fields_labels)
+    bar_width = 0.6
+    x = np.arange(n_fields)
+
+    means, stds = [], []
+    for field, label, color in fields_labels:
+        vals = [r[field] for r in kv_rows if r[field] is not None]
+        means.append(float(np.mean(vals)) if vals else 0.0)
+        stds.append(float(np.std(vals))   if vals else 0.0)
+
+    colors_list = [fl[2] for fl in fields_labels]
+    bars = ax.bar(x, means, bar_width, yerr=stds, capsize=5,
+                  color=colors_list, alpha=0.9)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([fl[1] for fl in fields_labels], fontsize=12)
+    ax.set_ylabel("Δ eRank (mean ± std, 3 seeds)", fontsize=11)
+    ax.set_title("Key-Value Retrieval (Standard) — Layerwise eRank Deltas\n"
+                 "L1 Δ_attn dominates; MLPs compress (Δ_mlp < 0)", fontsize=12)
+    ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    for bar, m in zip(bars, means):
+        ax.text(bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + (0.1 if m >= 0 else -0.3),
+                f"{m:.2f}", ha="center", va="bottom", fontsize=10)
+
+    fig.tight_layout()
+
+    path = os.path.join(out_dir, "key_value_layerwise_erank.png")
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {path}")
+    return path
+
+
+# ---------------------------------------------------------------------------
+# Figure 5: Key-value layerwise eRank (attention-only)
+# ---------------------------------------------------------------------------
+
+def plot_kv_attn_only_layerwise(rows: list[dict], out_dir: str) -> str:
+    task = "key_value"
+    arch = "attention_only"
+
+    kv_rows = [r for r in rows if r["task"] == task and r["arch"] == arch]
+    fields_labels = [
+        ("l0_da", "L0 Δ_attn", "#2196F3"),
+        ("l0_dm", "L0 Δ_mlp",  "#FF9800"),
+        ("l1_da", "L1 Δ_attn", "#1565C0"),
+        ("l1_dm", "L1 Δ_mlp",  "#E65100"),
+    ]
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    n_fields = len(fields_labels)
+    bar_width = 0.6
+    x = np.arange(n_fields)
+
+    means, stds = [], []
+    for field, label, color in fields_labels:
+        vals = [r[field] for r in kv_rows if r[field] is not None]
+        means.append(float(np.mean(vals)) if vals else 0.0)
+        stds.append(float(np.std(vals))   if vals else 0.0)
+
+    colors_list = [fl[2] for fl in fields_labels]
+    bars = ax.bar(x, means, bar_width, yerr=stds, capsize=5,
+                  color=colors_list, alpha=0.9)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([fl[1] for fl in fields_labels], fontsize=12)
+    ax.set_ylabel("Δ eRank (mean ± std, 3 seeds)", fontsize=11)
+    ax.set_title("Key-Value Retrieval (Attention-Only) — Layerwise eRank Deltas",
+                 fontsize=12)
+    ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    for bar, m in zip(bars, means):
+        ax.text(bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + (0.15 if m >= 0 else -0.4),
+                f"{m:.2f}", ha="center", va="bottom", fontsize=10)
+
+    fig.tight_layout()
+
+    path = os.path.join(out_dir, "key_value_attn_only_layerwise_erank.png")
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {path}")
+    return path
+
+
+# ---------------------------------------------------------------------------
 # Figure inventory report
 # ---------------------------------------------------------------------------
 
@@ -318,6 +413,17 @@ def write_inventory(paths: list[tuple[str, str]], out_dir: str):
         "Shows that the positive MLP contribution is concentrated in Layer 1 (L1 Δ_mlp > 0).",
         "Layer 0 MLP contribution is near zero or negative.",
         "",
+        "### key_value_layerwise_erank.png",
+        "Per-layer breakdown for standard key_value.",
+        "Shows that L1 attention does almost all of the eRank-expanding work, while both MLP",
+        "sublayers compress (Δ_mlp < 0) — the mirror image of modular addition.",
+        "",
+        "### key_value_attn_only_layerwise_erank.png",
+        "Per-layer breakdown for attention-only key_value (3 seeds).",
+        "Without MLPs, the eRank-expanding work shifts to L0 attention.",
+        "L1 attention is small and seed-variable (large error bar).",
+        "MLP bars are zero by construction (architecture has no MLP sublayers).",
+        "",
         "## Usage notes",
         "- Do not use attn-only modular_addition eRank bars in slides without noting the runs failed.",
         "- The hybrid task figures are not yet available (runs incomplete).",
@@ -345,11 +451,15 @@ def main():
     p1 = plot_accuracy_summary(rows, OUT_DIR)
     p2 = plot_erank_totals(rows, OUT_DIR)
     p3 = plot_modular_layerwise(rows, OUT_DIR)
+    p4 = plot_kv_layerwise(rows, OUT_DIR)
+    p5 = plot_kv_attn_only_layerwise(rows, OUT_DIR)
 
     write_inventory([
-        ("core_accuracy_summary.png",  p1),
-        ("core_erank_totals.png",       p2),
-        ("modular_layerwise_erank.png", p3),
+        ("core_accuracy_summary.png",            p1),
+        ("core_erank_totals.png",                 p2),
+        ("modular_layerwise_erank.png",           p3),
+        ("key_value_layerwise_erank.png",         p4),
+        ("key_value_attn_only_layerwise_erank.png", p5),
     ], OUT_DIR)
 
     print(f"\nAll figures saved to: {OUT_DIR}")

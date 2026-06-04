@@ -1,0 +1,67 @@
+[
+  {
+    "run": "linear 2-layer (wd=1.0)",
+    "best_val_acc": 0.3332876712328767,
+    "test_at_best_val": 0.3202301054650048,
+    "train_at_best_val": 0.3214157291827195,
+    "best_val_epoch": 4487,
+    "final_train_acc": 0.3209020393486413,
+    "final_val_acc": 0.30041095890410957,
+    "final_test_acc": 0.3098205725243117,
+    "final_epoch": 8000,
+    "n_rows": 8000,
+    "gap": 0.02049108044453174
+  },
+  {
+    "run": "linear 3-layer (wd=1.0)",
+    "best_val_acc": 0.35712328767123286,
+    "test_at_best_val": 0.32680454732228464,
+    "train_at_best_val": 0.34766527970411465,
+    "best_val_epoch": 3977,
+    "final_train_acc": 0.3491378572284721,
+    "final_val_acc": 0.3184931506849315,
+    "final_test_acc": 0.3270784823996713,
+    "final_epoch": 8000,
+    "n_rows": 8000,
+    "gap": 0.030644706543540623
+  },
+  {
+    "run": "linear 4-layer (wd=1.0)",
+    "best_val_acc": 0.36027397260273974,
+    "test_at_best_val": 0.3363922750308177,
+    "train_at_best_val": 0.3602164346500916,
+    "best_val_epoch": 3938,
+    "final_train_acc": 0.36624372870327565,
+    "final_val_acc": 0.3447945205479452,
+    "final_test_acc": 0.33557046979865773,
+    "final_epoch": 8000,
+    "n_rows": 8000,
+    "gap": 0.021449208155330468
+  },
+  {
+    "run": "FFN-head 4-layer (wd=0.1)",
+    "best_val_acc": 0.37232876712328766,
+    "test_at_best_val": 0.3791261471031366,
+    "train_at_best_val": 0.37603808153969964,
+    "best_val_epoch": 1051,
+    "final_train_acc": 0.3774592900806493,
+    "final_val_acc": 0.3593150684931507,
+    "final_test_acc": 0.37433228324887,
+    "final_epoch": 10000,
+    "n_rows": 10000,
+    "gap": 0.01814422158749862
+  },
+  {
+    "run": "aux-retrieval 4-layer (wd=0.1, linear head)",
+    "best_val_acc": 1.0,
+    "test_at_best_val": 1.0,
+    "train_at_best_val": 1.0,
+    "best_val_epoch": 182,
+    "final_train_acc": 1.0,
+    "final_val_acc": 1.0,
+    "final_test_acc": 1.0,
+    "final_epoch": 1622,
+    "n_rows": 1622,
+    "gap": 0.0
+  }
+]

@@ -1,0 +1,16 @@
+variant: freeze_A0
+seed: 0
+total_params: 622833
+total_trainable_params: 556785
+total_frozen_params: 66048
+
+component                      num_params    trainable  frozen
+blocks.0.attn                       66048            0  frozen
+blocks.0.mlp                       131712       131712  trainable
+blocks.1.attn                       66048        66048  trainable
+blocks.1.mlp                       131712       131712  trainable
+blocks.2.attn                       66048        66048  trainable
+blocks.2.mlp                       131712       131712  trainable
+embed                               14592        14592  trainable
+pos_embed                             384          384  trainable
+unembed                             14577        14577  trainable

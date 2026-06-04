@@ -1,0 +1,7 @@
+launch_time=2026-05-12T15:37:25-04:00
+physical_gpu_ids=1,2,3,4,5,6,7
+num_workers=7
+max_epochs=20000
+checkpoint_every=10
+full_checkpoint_every=100
+CUDA_VISIBLE_DEVICES_at_launch=<unset>

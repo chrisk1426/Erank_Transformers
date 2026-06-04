@@ -1,0 +1,17 @@
+{
+  "run_id": "depth2_bal_AMMA",
+  "schedule": "AMMA",
+  "depth": 2,
+  "n_blocks": 4,
+  "n_params": 424960,
+  "best_val_acc": 1.0,
+  "best_val_epoch": 10200,
+  "test_acc_at_best_val": 0.9991050453070813,
+  "test_loss_at_best_val": 0.04110341795853206,
+  "final_train_acc": 1.0,
+  "final_val_acc": 0.9973890339425587,
+  "final_epoch": 50000,
+  "grokking_tau": 8600,
+  "status": "GROKKED",
+  "elapsed_seconds": 8025.885824918747
+}

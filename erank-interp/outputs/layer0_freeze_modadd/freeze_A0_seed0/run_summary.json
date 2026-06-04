@@ -1,0 +1,21 @@
+{
+  "run_name": "freeze_A0_seed0",
+  "variant": "freeze_A0",
+  "seed": 0,
+  "freeze_A0": true,
+  "freeze_M0": false,
+  "best_val_acc": 1.0,
+  "best_val_epoch": 3000,
+  "test_acc_at_best_val": 0.9984338292873923,
+  "test_loss_at_best_val": 0.021407222880848818,
+  "final_train_acc": 1.0,
+  "final_val_acc": 1.0,
+  "final_epoch": 7850,
+  "tau_0.90": 2850,
+  "tau_0.95": 2875,
+  "status": "GROKKED",
+  "n_params_total": 622833,
+  "n_trainable_params": 556785,
+  "n_frozen_params": 66048,
+  "elapsed_seconds": 2383.744152545929
+}

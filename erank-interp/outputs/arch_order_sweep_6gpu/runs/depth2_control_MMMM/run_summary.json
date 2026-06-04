@@ -1,0 +1,17 @@
+{
+  "run_id": "depth2_control_MMMM",
+  "schedule": "MMMM",
+  "depth": 2,
+  "n_blocks": 4,
+  "n_params": 556288,
+  "best_val_acc": 0.010443864229765013,
+  "best_val_epoch": 1,
+  "test_acc_at_best_val": 0.008278330909497707,
+  "test_loss_at_best_val": 4.734528718675886,
+  "final_train_acc": 0.01174934725848564,
+  "final_val_acc": 0.007832898172323759,
+  "final_epoch": 50000,
+  "grokking_tau": null,
+  "status": "FAILED_TO_FIT",
+  "elapsed_seconds": 8768.751583099365
+}

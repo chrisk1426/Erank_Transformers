@@ -1,0 +1,21 @@
+{
+  "run_name": "normal_seed2",
+  "variant": "normal",
+  "seed": 2,
+  "freeze_A0": false,
+  "freeze_M0": false,
+  "best_val_acc": 1.0,
+  "best_val_epoch": 4350,
+  "test_acc_at_best_val": 0.9963083118917104,
+  "test_loss_at_best_val": 0.04233223955546107,
+  "final_train_acc": 0.9996736292428199,
+  "final_val_acc": 0.9817232375979112,
+  "final_epoch": 20000,
+  "tau_0.90": 4175,
+  "tau_0.95": 4225,
+  "status": "GROKKED",
+  "n_params_total": 622833,
+  "n_trainable_params": 622833,
+  "n_frozen_params": 0,
+  "elapsed_seconds": 5787.1694185733795
+}

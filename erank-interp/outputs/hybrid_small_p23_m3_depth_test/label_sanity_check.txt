@@ -3,163 +3,163 @@ LABEL SANITY CHECK - 20 examples
 ============================================================
 
 Example 1:
-  context: [24, 6, 23, 5, 25, 10, 26, 23, 24, 27]
-  q1_key: 23  q2_key: 24
-  v(q1): 5  v(q2): 6
-  expected label: 11
-  actual label:   11
+  context: [23, 22, 24, 12, 25, 15, 26, 23, 25, 27]
+  q1_key: 23  q2_key: 25
+  v(q1): 22  v(q2): 15
+  expected label: 14
+  actual label:   14
   PASS
 
 Example 2:
-  context: [25, 9, 24, 17, 23, 11, 26, 24, 25, 27]
-  q1_key: 24  q2_key: 25
-  v(q1): 17  v(q2): 9
-  expected label: 3
-  actual label:   3
-  PASS
-
-Example 3:
-  context: [25, 9, 24, 16, 23, 21, 26, 25, 24, 27]
+  context: [25, 16, 24, 6, 23, 16, 26, 25, 24, 27]
   q1_key: 25  q2_key: 24
-  v(q1): 9  v(q2): 16
-  expected label: 2
-  actual label:   2
-  PASS
-
-Example 4:
-  context: [23, 11, 25, 16, 24, 17, 26, 24, 23, 27]
-  q1_key: 24  q2_key: 23
-  v(q1): 17  v(q2): 11
-  expected label: 5
-  actual label:   5
-  PASS
-
-Example 5:
-  context: [23, 1, 24, 16, 25, 1, 26, 24, 23, 27]
-  q1_key: 24  q2_key: 23
-  v(q1): 16  v(q2): 1
-  expected label: 17
-  actual label:   17
-  PASS
-
-Example 6:
-  context: [24, 1, 25, 7, 23, 16, 26, 23, 25, 27]
-  q1_key: 23  q2_key: 25
-  v(q1): 16  v(q2): 7
-  expected label: 0
-  actual label:   0
-  PASS
-
-Example 7:
-  context: [23, 2, 24, 21, 25, 1, 26, 24, 25, 27]
-  q1_key: 24  q2_key: 25
-  v(q1): 21  v(q2): 1
+  v(q1): 16  v(q2): 6
   expected label: 22
   actual label:   22
   PASS
 
-Example 8:
-  context: [25, 13, 23, 19, 24, 15, 26, 24, 25, 27]
-  q1_key: 24  q2_key: 25
+Example 3:
+  context: [23, 3, 24, 18, 25, 6, 26, 23, 24, 27]
+  q1_key: 23  q2_key: 24
+  v(q1): 3  v(q2): 18
+  expected label: 21
+  actual label:   21
+  PASS
+
+Example 4:
+  context: [24, 18, 25, 17, 23, 15, 26, 24, 23, 27]
+  q1_key: 24  q2_key: 23
+  v(q1): 18  v(q2): 15
+  expected label: 10
+  actual label:   10
+  PASS
+
+Example 5:
+  context: [24, 6, 25, 1, 23, 19, 26, 23, 25, 27]
+  q1_key: 23  q2_key: 25
+  v(q1): 19  v(q2): 1
+  expected label: 20
+  actual label:   20
+  PASS
+
+Example 6:
+  context: [25, 15, 23, 13, 24, 12, 26, 25, 23, 27]
+  q1_key: 25  q2_key: 23
   v(q1): 15  v(q2): 13
   expected label: 5
   actual label:   5
   PASS
 
+Example 7:
+  context: [24, 16, 25, 12, 23, 6, 26, 25, 24, 27]
+  q1_key: 25  q2_key: 24
+  v(q1): 12  v(q2): 16
+  expected label: 5
+  actual label:   5
+  PASS
+
+Example 8:
+  context: [23, 3, 25, 15, 24, 19, 26, 25, 24, 27]
+  q1_key: 25  q2_key: 24
+  v(q1): 15  v(q2): 19
+  expected label: 11
+  actual label:   11
+  PASS
+
 Example 9:
-  context: [24, 11, 23, 9, 25, 1, 26, 25, 23, 27]
-  q1_key: 25  q2_key: 23
-  v(q1): 1  v(q2): 9
-  expected label: 10
-  actual label:   10
+  context: [23, 6, 25, 12, 24, 21, 26, 23, 25, 27]
+  q1_key: 23  q2_key: 25
+  v(q1): 6  v(q2): 12
+  expected label: 18
+  actual label:   18
   PASS
 
 Example 10:
-  context: [23, 11, 24, 19, 25, 3, 26, 24, 23, 27]
-  q1_key: 24  q2_key: 23
-  v(q1): 19  v(q2): 11
+  context: [24, 5, 25, 2, 23, 8, 26, 25, 24, 27]
+  q1_key: 25  q2_key: 24
+  v(q1): 2  v(q2): 5
   expected label: 7
   actual label:   7
   PASS
 
 Example 11:
-  context: [23, 3, 25, 22, 24, 0, 26, 23, 25, 27]
-  q1_key: 23  q2_key: 25
-  v(q1): 3  v(q2): 22
-  expected label: 2
-  actual label:   2
+  context: [25, 7, 23, 12, 24, 8, 26, 23, 24, 27]
+  q1_key: 23  q2_key: 24
+  v(q1): 12  v(q2): 8
+  expected label: 20
+  actual label:   20
   PASS
 
 Example 12:
-  context: [25, 7, 23, 1, 24, 8, 26, 23, 25, 27]
-  q1_key: 23  q2_key: 25
-  v(q1): 1  v(q2): 7
-  expected label: 8
-  actual label:   8
-  PASS
-
-Example 13:
-  context: [23, 22, 24, 21, 25, 16, 26, 24, 25, 27]
-  q1_key: 24  q2_key: 25
-  v(q1): 21  v(q2): 16
-  expected label: 14
-  actual label:   14
-  PASS
-
-Example 14:
-  context: [24, 21, 23, 5, 25, 21, 26, 25, 23, 27]
-  q1_key: 25  q2_key: 23
-  v(q1): 21  v(q2): 5
+  context: [25, 10, 23, 0, 24, 16, 26, 25, 24, 27]
+  q1_key: 25  q2_key: 24
+  v(q1): 10  v(q2): 16
   expected label: 3
   actual label:   3
   PASS
 
+Example 13:
+  context: [23, 15, 24, 15, 25, 14, 26, 25, 23, 27]
+  q1_key: 25  q2_key: 23
+  v(q1): 14  v(q2): 15
+  expected label: 6
+  actual label:   6
+  PASS
+
+Example 14:
+  context: [25, 17, 23, 10, 24, 19, 26, 24, 25, 27]
+  q1_key: 24  q2_key: 25
+  v(q1): 19  v(q2): 17
+  expected label: 13
+  actual label:   13
+  PASS
+
 Example 15:
-  context: [23, 18, 25, 0, 24, 4, 26, 23, 25, 27]
-  q1_key: 23  q2_key: 25
-  v(q1): 18  v(q2): 0
-  expected label: 18
-  actual label:   18
+  context: [24, 2, 25, 11, 23, 21, 26, 24, 25, 27]
+  q1_key: 24  q2_key: 25
+  v(q1): 2  v(q2): 11
+  expected label: 13
+  actual label:   13
   PASS
 
 Example 16:
-  context: [25, 8, 23, 18, 24, 19, 26, 23, 24, 27]
+  context: [23, 1, 25, 14, 24, 14, 26, 23, 24, 27]
   q1_key: 23  q2_key: 24
-  v(q1): 18  v(q2): 19
-  expected label: 14
-  actual label:   14
-  PASS
-
-Example 17:
-  context: [23, 11, 25, 11, 24, 14, 26, 23, 24, 27]
-  q1_key: 23  q2_key: 24
-  v(q1): 11  v(q2): 14
-  expected label: 2
-  actual label:   2
-  PASS
-
-Example 18:
-  context: [23, 10, 25, 17, 24, 21, 26, 23, 24, 27]
-  q1_key: 23  q2_key: 24
-  v(q1): 10  v(q2): 21
-  expected label: 8
-  actual label:   8
-  PASS
-
-Example 19:
-  context: [25, 18, 24, 20, 23, 9, 26, 24, 25, 27]
-  q1_key: 24  q2_key: 25
-  v(q1): 20  v(q2): 18
+  v(q1): 1  v(q2): 14
   expected label: 15
   actual label:   15
   PASS
 
-Example 20:
-  context: [24, 12, 25, 2, 23, 14, 26, 25, 24, 27]
+Example 17:
+  context: [25, 14, 24, 6, 23, 10, 26, 24, 23, 27]
+  q1_key: 24  q2_key: 23
+  v(q1): 6  v(q2): 10
+  expected label: 16
+  actual label:   16
+  PASS
+
+Example 18:
+  context: [24, 21, 23, 15, 25, 8, 26, 23, 24, 27]
+  q1_key: 23  q2_key: 24
+  v(q1): 15  v(q2): 21
+  expected label: 13
+  actual label:   13
+  PASS
+
+Example 19:
+  context: [23, 5, 24, 6, 25, 22, 26, 25, 24, 27]
   q1_key: 25  q2_key: 24
-  v(q1): 2  v(q2): 12
-  expected label: 14
-  actual label:   14
+  v(q1): 22  v(q2): 6
+  expected label: 5
+  actual label:   5
+  PASS
+
+Example 20:
+  context: [24, 11, 25, 10, 23, 19, 26, 23, 24, 27]
+  q1_key: 23  q2_key: 24
+  v(q1): 19  v(q2): 11
+  expected label: 7
+  actual label:   7
   PASS
 
 ============================================================

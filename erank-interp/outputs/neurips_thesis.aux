@@ -1,0 +1,161 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{power2022grokking}
+\citation{nanda2023progress}
+\citation{liu2023grokkingrank,lyu2023dichotomy}
+\citation{anonymous2026spectral,chen2025complexity}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\citation{power2022grokking}
+\citation{nanda2023progress}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:headline-acc}{{1a}{2}{Test accuracy by (task, architecture), 3 seeds; chance $=1/p$}{figure.caption.2}{}}
+\newlabel{sub@fig:headline-acc}{{a}{2}{Test accuracy by (task, architecture), 3 seeds; chance $=1/p$}{figure.caption.2}{}}
+\newlabel{fig:headline-erank}{{1b}{2}{$\Sigma \Delta _{\text {attn}}$ vs $\Sigma \Delta _{\text {mlp}}$ for the same conditions. Failed runs (attention-only modular addition, hybrid) show large but uninterpretable $\Sigma \Delta _{\text {attn}}$ from near-init checkpoints}{figure.caption.2}{}}
+\newlabel{sub@fig:headline-erank}{{b}{2}{$\Sigma \Delta _{\text {attn}}$ vs $\Sigma \Delta _{\text {mlp}}$ for the same conditions. Failed runs (attention-only modular addition, hybrid) show large but uninterpretable $\Sigma \Delta _{\text {attn}}$ from near-init checkpoints}{figure.caption.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Headline results: key--value is solved by both architectures and is attention-dominated; modular addition is solved by standard but not attention-only and shows positive late-layer $\Delta _{\text  {mlp}}$; the hybrid task fails uniformly.}}{2}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:headline}{{1}{2}{Headline results: key--value is solved by both architectures and is attention-dominated; modular addition is solved by standard but not attention-only and shows positive late-layer $\Delta _{\text {mlp}}$; the hybrid task fails uniformly}{figure.caption.2}{}}
+\citation{liu2023grokkingrank}
+\citation{lyu2023dichotomy}
+\citation{gromov2023grokking}
+\citation{chen2025complexity}
+\citation{anonymous2026spectral}
+\citation{elhage2021framework}
+\citation{geva2021kv}
+\citation{olsson2022induction}
+\citation{elhage2023privileged}
+\citation{nanda2022transformerlens}
+\citation{roy2007effective}
+\citation{yunis2024spectral}
+\citation{liu2021gmlp}
+\citation{lin2024mlp}
+\citation{liu2025layer,geva2021kv}
+\citation{dziri2023faith}
+\citation{wang2025twohop}
+\citation{yang2024latent}
+\citation{wu2025binding}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{3}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{3}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Grokking and the geometry of generalization}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Mechanistic interpretability and the residual stream}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Block-order ablations and architectural variants}{3}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Compositional retrieval and auxiliary supervision}{3}{subsection.2.4}\protected@file@percent }
+\citation{jiang2021auxiliary}
+\citation{anonymous2026spectral}
+\citation{nanda2023progress}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Position relative to prior art}{4}{subsection.2.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Position of this thesis relative to existing literature.}}{4}{table.caption.3}\protected@file@percent }
+\newlabel{tab:position}{{1}{4}{Position of this thesis relative to existing literature}{table.caption.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Preliminaries}{4}{section.3}\protected@file@percent }
+\newlabel{sec:prelim}{{3}{4}{Preliminaries}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Tasks}{4}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Architectures}{4}{subsection.3.2}\protected@file@percent }
+\citation{roy2007effective}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Effective rank}{5}{subsection.3.3}\protected@file@percent }
+\newlabel{eq:erank}{{1}{5}{Effective rank}{equation.3.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Per-component decomposition}{5}{subsection.3.4}\protected@file@percent }
+\newlabel{eq:deltas}{{2}{5}{Per-component decomposition}{equation.3.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Training and selection}{5}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Methods Summary}{5}{section.4}\protected@file@percent }
+\newlabel{sec:methods}{{4}{5}{Methods Summary}{section.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Experiments}{5}{section.5}\protected@file@percent }
+\newlabel{sec:exp}{{5}{5}{Experiments}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Seed-robust replication of the core MLP-vs-attention contrast}{5}{subsection.5.1}\protected@file@percent }
+\newlabel{sec:replication}{{5.1}{5}{Seed-robust replication of the core MLP-vs-attention contrast}{subsection.5.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Test accuracy aggregated by (task, architecture) over 3 seeds. Solved threshold is test\_acc $\ge 0.98$.}}{6}{table.caption.4}\protected@file@percent }
+\newlabel{tab:core-acc}{{2}{6}{Test accuracy aggregated by (task, architecture) over 3 seeds. Solved threshold is test\_acc $\ge 0.98$}{table.caption.4}{}}
+\newlabel{fig:erank-modadd-layer}{{2a}{6}{Per-layer $\Delta _{\text {attn}}, \Delta _{\text {mlp}}$ for standard modular addition, mean over 3 seeds}{figure.caption.6}{}}
+\newlabel{sub@fig:erank-modadd-layer}{{a}{6}{Per-layer $\Delta _{\text {attn}}, \Delta _{\text {mlp}}$ for standard modular addition, mean over 3 seeds}{figure.caption.6}{}}
+\newlabel{fig:l0-vs-l1-mlp}{{2b}{6}{Layer-0 vs layer-1 $\Delta _{\text {mlp}}$. Layer-0 is consistently compressive ($-0.45\pm 0.47$); layer-1 is consistently expansive ($+4.49\pm 3.98$)}{figure.caption.6}{}}
+\newlabel{sub@fig:l0-vs-l1-mlp}{{b}{6}{Layer-0 vs layer-1 $\Delta _{\text {mlp}}$. Layer-0 is consistently compressive ($-0.45\pm 0.47$); layer-1 is consistently expansive ($+4.49\pm 3.98$)}{figure.caption.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Layer-0 vs layer-1 MLP role differentiation in standard modular-addition models.}}{6}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:layer-mlp-role}{{2}{6}{Layer-0 vs layer-1 MLP role differentiation in standard modular-addition models}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Endpoint eRank and per-layer MLP role differentiation}{6}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:erank-attribution}{{5.2}{6}{Endpoint eRank and per-layer MLP role differentiation}{subsection.5.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Per-layer endpoint eRank decomposition at the best-val checkpoint, mean $\pm $ std over 3 seeds.}}{6}{table.caption.5}\protected@file@percent }
+\newlabel{tab:erank-attribution}{{3}{6}{Per-layer endpoint eRank decomposition at the best-val checkpoint, mean $\pm $ std over 3 seeds}{table.caption.5}{}}
+\newlabel{fig:full-ablation}{{3a}{7}{Full ablation: $\Delta $ test accuracy by (layer, component), 3 seeds}{figure.caption.9}{}}
+\newlabel{sub@fig:full-ablation}{{a}{7}{Full ablation: $\Delta $ test accuracy by (layer, component), 3 seeds}{figure.caption.9}{}}
+\newlabel{fig:graded-ablation}{{3b}{7}{Graded ablation: dose--response curves for four (task, layer, component) cells}{figure.caption.9}{}}
+\newlabel{sub@fig:graded-ablation}{{b}{7}{Graded ablation: dose--response curves for four (task, layer, component) cells}{figure.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Causal validation. Both ablation views identify layer-1 attention as the most fragile component; modular L1 MLP collapses gracefully (consistent with quantitative-not-binary contribution).}}{7}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:ablation}{{3}{7}{Causal validation. Both ablation views identify layer-1 attention as the most fragile component; modular L1 MLP collapses gracefully (consistent with quantitative-not-binary contribution)}{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Causal full and graded ablation: validating necessity}{7}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:ablation}{{5.3}{7}{Causal full and graded ablation: validating necessity}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Full ablation (zero out one component at inference).}{7}{section*.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Test-accuracy drop after zeroing one (layer, component), mean over 3 seeds.}}{7}{table.caption.8}\protected@file@percent }
+\newlabel{tab:full-ablation}{{4}{7}{Test-accuracy drop after zeroing one (layer, component), mean over 3 seeds}{table.caption.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{Graded ablation (scale by $(1-r)$).}{7}{section*.10}\protected@file@percent }
+\citation{chen2025complexity}
+\citation{anonymous2026spectral}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Graded ablation: mean test acc at intermediate scales.}}{8}{table.caption.11}\protected@file@percent }
+\newlabel{tab:graded}{{5}{8}{Graded ablation: mean test acc at intermediate scales}{table.caption.11}{}}
+\newlabel{fig:traj-erank}{{4a}{8}{eRank($R_{\text {post}}^{(1)}$) and val\_acc}{figure.caption.12}{}}
+\newlabel{sub@fig:traj-erank}{{a}{8}{eRank($R_{\text {post}}^{(1)}$) and val\_acc}{figure.caption.12}{}}
+\newlabel{fig:traj-topk}{{4b}{8}{Top-$k$ singular mass}{figure.caption.12}{}}
+\newlabel{sub@fig:traj-topk}{{b}{8}{Top-$k$ singular mass}{figure.caption.12}{}}
+\newlabel{fig:traj-rho}{{4c}{8}{Same-sum within/between distance ratio $\rho $}{figure.caption.12}{}}
+\newlabel{sub@fig:traj-rho}{{c}{8}{Same-sum within/between distance ratio $\rho $}{figure.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Three views of the same grokking trajectory (seed 0). eRank rises during memorization then falls 4$\times $ post-grokking; top-$k$ mass concentrates monotonically; the within/between distance ratio drops by 5 orders of magnitude.}}{8}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:trajectory}{{4}{8}{Three views of the same grokking trajectory (seed 0). eRank rises during memorization then falls 4$\times $ post-grokking; top-$k$ mass concentrates monotonically; the within/between distance ratio drops by 5 orders of magnitude}{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}The grokking trajectory: representational compression in the residual stream}{8}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:trajectory}{{5.4}{8}{The grokking trajectory: representational compression in the residual stream}{subsection.5.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Trajectory of layer-1 \texttt  {resid\_post} geometry (seed 0). All quantities computed on the full $113^2$ grid.}}{8}{table.caption.13}\protected@file@percent }
+\newlabel{tab:trajectory}{{6}{8}{Trajectory of layer-1 \texttt {resid\_post} geometry (seed 0). All quantities computed on the full $113^2$ grid}{table.caption.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Block-order ablation: route-before-process}{8}{subsection.5.5}\protected@file@percent }
+\newlabel{sec:arch-order}{{5.5}{8}{Block-order ablation: route-before-process}{subsection.5.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Architecture-order matrix. Single seed (seed 0). All trained on modular addition with identical hyperparameters.}}{9}{table.caption.14}\protected@file@percent }
+\newlabel{tab:arch-matrix}{{7}{9}{Architecture-order matrix. Single seed (seed 0). All trained on modular addition with identical hyperparameters}{table.caption.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Architecture-order matrix on modular addition. Route-before-process schedules grok and show low eRank with structured top-$k$ mass; process-before-route schedules fail with anomalously large attention-driven eRank.}}{9}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:arch-matrix}{{5}{9}{Architecture-order matrix on modular addition. Route-before-process schedules grok and show low eRank with structured top-$k$ mass; process-before-route schedules fail with anomalously large attention-driven eRank}{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Compositional retrieve-then-add: shortcuts, frozen probes, and auxiliary rescue}{9}{subsection.5.6}\protected@file@percent }
+\newlabel{sec:hybrid}{{5.6}{9}{Compositional retrieve-then-add: shortcuts, frozen probes, and auxiliary rescue}{subsection.5.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Baseline runs ($p=23, m=3$, single seed each).}{9}{section*.16}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Hybrid $p=23, m=3$ query-counterfactual diagnostics.}}{9}{table.caption.17}\protected@file@percent }
+\newlabel{tab:hybrid-counter}{{8}{9}{Hybrid $p=23, m=3$ query-counterfactual diagnostics}{table.caption.17}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Frozen-probe accuracy on the EQ-position residual stream of failed hybrid baselines.}}{10}{table.caption.18}\protected@file@percent }
+\newlabel{tab:hybrid-probe}{{9}{10}{Frozen-probe accuracy on the EQ-position residual stream of failed hybrid baselines}{table.caption.18}{}}
+\newlabel{fig:hybrid-counter}{{6a}{10}{Counterfactual unique predictions: 97--99\% of contexts produce a constant prediction across the 3 possible queries}{figure.caption.19}{}}
+\newlabel{sub@fig:hybrid-counter}{{a}{10}{Counterfactual unique predictions: 97--99\% of contexts produce a constant prediction across the 3 possible queries}{figure.caption.19}{}}
+\newlabel{fig:hybrid-probe}{{6b}{10}{Frozen probe accuracy by target. All probes plateau at 0.32--0.35; MLP probe $\approx $ linear probe; non-linear capacity does not unlock additional info}{figure.caption.19}{}}
+\newlabel{sub@fig:hybrid-probe}{{b}{10}{Frozen probe accuracy by target. All probes plateau at 0.32--0.35; MLP probe $\approx $ linear probe; non-linear capacity does not unlock additional info}{figure.caption.19}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Hybrid baseline diagnostics: failure mode is a fixed-pair shortcut and a retrieval bottleneck.}}{10}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:hybrid-diag}{{6}{10}{Hybrid baseline diagnostics: failure mode is a fixed-pair shortcut and a retrieval bottleneck}{figure.caption.19}{}}
+\@writefile{toc}{\contentsline {paragraph}{Auxiliary retrieval rescue.}{10}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The puzzle.}{10}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{FFN-head experiment (confounded).}{10}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion and Limitations}{10}{section.6}\protected@file@percent }
+\newlabel{sec:discussion}{{6}{10}{Discussion and Limitations}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}What the per-component eRank decomposition does and does not show}{10}{subsection.6.1}\protected@file@percent }
+\bibstyle{plainnat}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Limitations}{11}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Outlook}{11}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{11}{section.7}\protected@file@percent }
+\newlabel{sec:conclusion}{{7}{11}{Conclusion}{section.7}{}}
+\bibcite{anonymous2026spectral}{{1}{2026}{{Anonymous}}{{}}}
+\bibcite{chen2025complexity}{{2}{2025}{{Chen et~al.}}{{}}}
+\bibcite{dziri2023faith}{{3}{2023}{{Dziri et~al.}}{{}}}
+\bibcite{elhage2021framework}{{4}{2021}{{Elhage et~al.}}{{}}}
+\bibcite{elhage2023privileged}{{5}{2023}{{Elhage et~al.}}{{}}}
+\bibcite{geva2021kv}{{6}{2021}{{Geva et~al.}}{{}}}
+\bibcite{gromov2023grokking}{{7}{2023}{{Gromov}}{{}}}
+\bibcite{jiang2021auxiliary}{{8}{2021}{{Jiang and Bansal}}{{}}}
+\bibcite{lin2024mlp}{{9}{2024}{{Lin et~al.}}{{}}}
+\bibcite{liu2023grokkingrank}{{10}{2023}{{Liu et~al.}}{{}}}
+\bibcite{liu2021gmlp}{{11}{2021}{{Liu et~al.}}{{}}}
+\bibcite{liu2025layer}{{12}{2025}{{Liu et~al.}}{{}}}
+\bibcite{lyu2023dichotomy}{{13}{2023}{{Lyu et~al.}}{{}}}
+\bibcite{nanda2022transformerlens}{{14}{2022}{{Nanda}}{{}}}
+\bibcite{nanda2023progress}{{15}{2023}{{Nanda et~al.}}{{}}}
+\bibcite{olsson2022induction}{{16}{2022}{{Olsson et~al.}}{{}}}
+\bibcite{power2022grokking}{{17}{2022}{{Power et~al.}}{{}}}
+\bibcite{roy2007effective}{{18}{2007}{{Roy and Vetterli}}{{}}}
+\bibcite{wang2025twohop}{{19}{2025}{{Wang et~al.}}{{}}}
+\bibcite{wu2025binding}{{20}{2025}{{Wu et~al.}}{{}}}
+\bibcite{yang2024latent}{{21}{2024}{{Yang et~al.}}{{}}}
+\bibcite{yunis2024spectral}{{22}{2024}{{Yunis et~al.}}{{}}}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Reproducibility}{13}{appendix.A}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B}Per-seed endpoint eRank tables}{13}{appendix.B}\protected@file@percent }
+\gdef \@abspage@last{13}

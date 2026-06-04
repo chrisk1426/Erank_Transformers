@@ -1,0 +1,101 @@
+{
+  "generated": "2026-05-10",
+  "repo": "/jumbo/lisp/f006j44/erank/erank-interp",
+  "scope": "results-collection only; no training, no model edits",
+  "tmux_gpu_status": {
+    "tmux_sessions": ["erank-train", "training"],
+    "all_idle": true,
+    "gpus_idle": 8,
+    "running_processes": 0
+  },
+  "core_seed_robustness": {
+    "n_runs": 18,
+    "n_complete": 18,
+    "chance_p113": 0.00885,
+    "aggregates": [
+      {"task": "key_value", "architecture": "standard", "mean_test_acc": 1.0, "std_test_acc": 0.0, "mean_sum_delta_attn": 6.461, "mean_sum_delta_mlp": -2.585, "n_seeds": 3, "seeds_solved": 3},
+      {"task": "key_value", "architecture": "attention_only", "mean_test_acc": 1.0, "std_test_acc": 0.0, "mean_sum_delta_attn": 6.365, "mean_sum_delta_mlp": 0.0, "n_seeds": 3, "seeds_solved": 3},
+      {"task": "modular_addition", "architecture": "standard", "mean_test_acc": 0.99996, "std_test_acc": 0.00006, "mean_sum_delta_attn": 10.666, "mean_sum_delta_mlp": 3.968, "n_seeds": 3, "seeds_solved": 3},
+      {"task": "modular_addition", "architecture": "attention_only", "mean_test_acc": 0.00653, "std_test_acc": 0.00189, "mean_sum_delta_attn": 70.187, "mean_sum_delta_mlp": 0.0, "n_seeds": 3, "seeds_solved": 0, "caveat": "best-val checkpoints near init; eRank not interpretable"},
+      {"task": "hybrid_retrieve_add", "architecture": "standard", "p": 113, "m": 4, "mean_test_acc": 0.00961, "std_test_acc": 0.00035, "mean_sum_delta_attn": 41.042, "mean_sum_delta_mlp": 34.132, "n_seeds": 3, "seeds_solved": 0, "caveat": "all runs failed; eRank not interpretable"},
+      {"task": "hybrid_retrieve_add", "architecture": "attention_only", "p": 113, "m": 4, "mean_test_acc": 0.00867, "std_test_acc": 0.00164, "mean_sum_delta_attn": 29.826, "mean_sum_delta_mlp": 0.0, "n_seeds": 3, "seeds_solved": 0}
+    ]
+  },
+  "ablation_full_zero": {
+    "by_task_layer_component": [
+      {"task": "key_value", "layer": 0, "component": "attn", "mean_delta_test_acc": 0.717, "std": 0.033},
+      {"task": "key_value", "layer": 0, "component": "mlp", "mean_delta_test_acc": 0.951, "std": 0.015},
+      {"task": "key_value", "layer": 1, "component": "attn", "mean_delta_test_acc": 0.966, "std": 0.002},
+      {"task": "key_value", "layer": 1, "component": "mlp", "mean_delta_test_acc": 0.674, "std": 0.056},
+      {"task": "modular_addition", "layer": 0, "component": "attn", "mean_delta_test_acc": 0.910, "std": 0.061},
+      {"task": "modular_addition", "layer": 0, "component": "mlp", "mean_delta_test_acc": 0.920, "std": 0.039},
+      {"task": "modular_addition", "layer": 1, "component": "attn", "mean_delta_test_acc": 0.989, "std": 0.001},
+      {"task": "modular_addition", "layer": 1, "component": "mlp", "mean_delta_test_acc": 0.951, "std": 0.058}
+    ]
+  },
+  "graded_ablation": {
+    "method": "scale component output by (1-r)",
+    "cells": ["key_value/L1/attn", "key_value/L0/mlp", "modular_addition/L1/attn", "modular_addition/L1/mlp"],
+    "summary": "All cells preserve full accuracy up to r=0.25; collapse window r in [0.5, 1.0]; modular L1 MLP most graceful, modular L1 attn most fragile beyond r=0.5"
+  },
+  "modadd_grokking_geometry": {
+    "tau_per_seed": {"0": 4506, "1": 5363, "2": 8824},
+    "seed0_dense": {
+      "epoch_0": {"erank_post_l1": 71.41, "top5_mass": 0.181, "rho_within_between": 1.07e5},
+      "epoch_2326_pre_grok": {"erank_post_l1": 45.06, "top5_mass": 0.290, "rho": 0.731},
+      "epoch_2439_at_grok": {"erank_post_l1": 34.66, "top5_mass": 0.374, "rho": 0.376},
+      "epoch_2974_post_grok": {"erank_post_l1": 20.71, "top5_mass": 0.466, "rho": 0.326}
+    },
+    "layer_mlp_delta_aggregate_n3": {
+      "L0": {"mean": -0.45, "std": 0.47},
+      "L1": {"mean": 4.49, "std": 3.98}
+    }
+  },
+  "hybrid_smaller_p23_m3": {
+    "baseline_runs_single_seed": [
+      {"layers": 2, "test_acc": 0.310, "verdict": "LIKELY_FIXED_PAIR_SHORTCUT", "counterfactual_acc": 0.336},
+      {"layers": 3, "test_acc": 0.327, "verdict": "LIKELY_FIXED_PAIR_SHORTCUT", "counterfactual_acc": 0.351},
+      {"layers": 4, "test_acc": 0.336, "verdict": "LIKELY_FIXED_PAIR_SHORTCUT", "counterfactual_acc": 0.364}
+    ],
+    "ffn_head_4layer": {"test_acc": 0.379, "wd": 0.1, "head": "FFN256+GELU", "caveat": "wd and head changed simultaneously"},
+    "aux_retrieval_4layer_seed0": {
+      "sum_train_acc": 1.0, "sum_val_acc": 1.0, "sum_test_acc": 1.0,
+      "r1_test_acc": 0.509, "r2_test_acc": 0.510,
+      "best_sum_val_epoch": 182,
+      "verdict": "LIKELY_QUERY_CONDITIONED",
+      "counterfactual_acc": 1.0,
+      "endpoint_erank": {"sum_delta_attn": 45.53, "sum_delta_mlp": 16.88}
+    },
+    "frozen_probes": [
+      {"layers": 2, "linear_sum": 0.322, "mlp_sum": 0.322, "linear_r1": 0.253, "mlp_r1": 0.328, "linear_r2": 0.250, "mlp_r2": 0.319},
+      {"layers": 3, "linear_sum": 0.335, "mlp_sum": 0.337, "linear_r1": 0.333, "mlp_r1": 0.337, "linear_r2": 0.330, "mlp_r2": 0.329},
+      {"layers": 4, "linear_sum": 0.338, "mlp_sum": 0.336, "linear_r1": 0.340, "mlp_r1": 0.347, "linear_r2": 0.348, "mlp_r2": 0.348}
+    ]
+  },
+  "modadd_arch_matrix_4layer_single_seed": [
+    {"schedule": "AMAMAMAM", "params": 820480, "best_val": 1.0000, "test_at_best": 0.9991, "tau": 3150, "sum_delta_attn": 8.18, "sum_delta_mlp": 11.08, "final_erank": 20.26, "same_sum_rho": 0.337, "status": "SOLVED"},
+    {"schedule": "AAAA", "params": 293632, "best_val": 0.0104, "test_at_best": 0.0038, "tau": null, "sum_delta_attn": 70.02, "sum_delta_mlp": 0.0, "final_erank": 71.02, "same_sum_rho": null, "status": "FAILED"},
+    {"schedule": "MMMM", "params": 556288, "best_val": 0.0104, "test_at_best": 0.0083, "tau": null, "sum_delta_attn": 0.0, "sum_delta_mlp": -0.0, "final_erank": 1.00, "same_sum_rho": null, "status": "FAILED"},
+    {"schedule": "AMMM", "params": 490624, "best_val": 0.9948, "test_at_best": 0.9758, "tau": 11200, "sum_delta_attn": 4.92, "sum_delta_mlp": 5.23, "final_erank": 11.15, "same_sum_rho": 0.369, "status": "SOLVED"},
+    {"schedule": "MMMA", "params": 490624, "best_val": 0.0157, "test_at_best": 0.0097, "tau": null, "sum_delta_attn": 38.23, "sum_delta_mlp": 0.0, "final_erank": 39.23, "same_sum_rho": null, "status": "FAILED"},
+    {"schedule": "AAMM", "params": 424960, "best_val": 0.9948, "test_at_best": 0.9874, "tau": 6325, "sum_delta_attn": 5.41, "sum_delta_mlp": 3.85, "final_erank": 10.25, "same_sum_rho": 0.229, "status": "SOLVED"},
+    {"schedule": "MMAA", "params": 424960, "best_val": 0.0170, "test_at_best": 0.0055, "tau": null, "sum_delta_attn": 74.07, "sum_delta_mlp": -0.0, "final_erank": 75.07, "same_sum_rho": null, "status": "FAILED"}
+  ],
+  "caveats": [
+    "Attention-only modular-addition eRank is from near-init checkpoints (val_acc <= 0.013); not interpretable as learned representation",
+    "All p=113 hybrid runs failed; their eRank reflects unstructured dynamics, not a hybrid circuit",
+    "Grokking time series is dense for seed 0 only; seeds 1, 2 have only best_val + final checkpoints",
+    "Architecture matrix is single-seed and not parameter-matched (294k - 820k)",
+    "FFN-head experiment changed head type and weight decay simultaneously",
+    "Aux-retrieval rescue: r1/r2 probe accuracies stay ~0.5 despite supervision",
+    "Frozen probe targets used full-grid analysis sets in some places (modadd grokking geometry, same-sum) instead of held-out test"
+  ],
+  "recommended_actions": [
+    "Add seeds to the 3 grokked architecture-matrix schedules and parameter-match the comparison",
+    "Run linear-head wd=0.1 control for the FFN-head experiment",
+    "Probe the aux-retrieval rescue model at intermediate layers and other positions to localize r1/r2 information",
+    "Run dense periodic checkpointing for seeds 1, 2 of standard modular addition",
+    "Sweep p in {7, 13, 23, 47, 113} on the aux-retrieval recipe",
+    "Activation-patching on key-value (cleanest condition) for mechanistic head-level interpretability"
+  ]
+}

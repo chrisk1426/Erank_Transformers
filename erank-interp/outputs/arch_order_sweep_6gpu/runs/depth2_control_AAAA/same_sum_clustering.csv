@@ -1,0 +1,4 @@
+run_id,depth,schedule,seed,checkpoint_label,epoch,train_acc,val_acc,D_within,D_between,within_between_ratio,num_examples,analysis_set
+depth2_control_AAAA,2,AAAA,0,random_init,0,,,0.10309643556177617,0.08218326347675102,1.2544699638380912,500,val
+depth2_control_AAAA,2,AAAA,0,best_val,19475,1.0,0.010443864229765013,7939.64557421875,6415.186615186615,1.2376328313541645,500,val
+depth2_control_AAAA,2,AAAA,0,final,50000,1.0,0.0013054830287206266,8724.9274765625,6766.52767052767,1.2894246357056733,500,val

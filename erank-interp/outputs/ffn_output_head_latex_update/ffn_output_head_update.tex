@@ -1,0 +1,238 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.85in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{array}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+
+\title{Update: Nonlinear Output Heads and Hybrid Retrieve-Add Failure Modes}
+\author{Christopher Kang}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Executive Summary}
+
+\begin{itemize}
+\item The FFN output head \textbf{does not solve} the hybrid retrieve-then-add task at $p=23, m=3$. With a 4-layer standard transformer, a 2-layer GELU MLP output head (hidden $256$) reaches best validation accuracy $0.372$ at epoch 1051 and test accuracy $0.379$ at the best-validation checkpoint, sitting at the same plateau as the linear-head baseline.
+\item The FFN-head test accuracy of $0.379$ is almost identical to the analytical \emph{fixed-pair shortcut} baseline $\frac{1}{3}+\frac{2}{3}\cdot\frac{1}{23}\approx 0.362$, i.e.\ the accuracy of a model that always predicts the sum of one fixed pair of context values regardless of query. Query diagnostics on the matching linear-head models classify them as \texttt{LIKELY\_FIXED\_PAIR\_SHORTCUT} with constant prediction across queries for $97{-}99\%$ of contexts.
+\item The improvement vs.\ the linear-head 4-layer baseline (test $0.336$) is \textbf{$\Delta = +0.043$ test accuracy} -- a small numerical bump, well within the shortcut plateau, not a qualitative change.
+\item \textbf{The FFN-head run is confounded with weight decay}: it uses $\mathrm{wd}=0.1$, while the matched linear-head baseline uses $\mathrm{wd}=1.0$. This is a rescue/diagnostic experiment, not a clean isolated head-only intervention.
+\item \textbf{Frozen probes on the linear-head models support the representation-failure interpretation, not a readout-bottleneck interpretation.} Both linear and MLP probes for the sum target, $r_1=v(q_1)$, and $r_2=v(q_2)$ saturate at $\approx 0.33$ test accuracy on the 4-layer model. The MLP probe does not outperform the linear probe -- so the relevant information is genuinely not present in the EQ-position residual, not merely hidden behind a nonlinear transformation. A more capable readout cannot recover what the representation does not encode.
+\item For comparison, the matching auxiliary-retrieval rescue run (same $p, m$, 4 layers, $\mathrm{wd}=0.1$, seed 0, \emph{linear} head, plus auxiliary supervision losses on $r_1$ and $r_2$ with weight $\alpha=0.5$) reaches $1.000$ on val/test by epoch $\sim 182$. The bottleneck is therefore the training signal / representation, not the output head: a linear head suffices when the model is forced to learn query-conditioned retrieval.
+\item Interpretation category: \texttt{NO\_MEANINGFUL\_IMPROVEMENT} / \texttt{AMBIGUOUS\_CONFOUNDED}.
+\end{itemize}
+
+\section{Motivation}
+
+For the hybrid retrieve-then-add task, the model must compute
+\[
+y = \bigl(v(q_1) + v(q_2)\bigr) \bmod p,
+\]
+predicting from the final EQ-position residual representation $z$. Two qualitatively different failures are possible:
+
+\paragraph{Readout bottleneck.} The transformer body has already organised $z$ so that the answer is recoverable by a sufficiently expressive function $f(z)$, but the standard linear unembed $\mathrm{logits} = Wz + b$ is too weak. Diagnostic: replace the linear head with a nonlinear FFN head
+\[
+h = \phi(W_1 z + b_1), \qquad \mathrm{logits} = W_2 h + b_2,
+\]
+where $\phi = \mathrm{GELU}$ and $W_1 \in \mathbb{R}^{H \times d_\text{model}}$. If this changes the outcome, the linear readout was the limit.
+
+\paragraph{Representation / retrieval bottleneck.} The body itself never extracts query-conditioned $v(q_1), v(q_2)$ at the EQ position; instead it learns a query-ignoring shortcut. In this case neither a linear nor a nonlinear head can recover the answer, because the relevant information is not encoded in $z$.
+
+The FFN-head experiment is a diagnostic discrimination between these two hypotheses, supplemented by frozen probes and query-conditioning tests.
+
+\section{Experimental Setup}
+
+\paragraph{Task.}
+Hybrid retrieve-then-add. Context tokens are $m=3$ key--value pairs $(k_0, v_0, k_1, v_1, k_2, v_2)$, a \texttt{QUERY} marker, two query keys $(q_1, q_2)$, and an \texttt{EQ} marker -- 10 tokens total. The label is $(v(q_1) + v(q_2)) \bmod 23$.
+
+\paragraph{Dataset.}
+Exhaustive: $23^3 \times 6 = 73{,}002$ examples with $80/10/10$ split (58{,}401 train / 7{,}300 val / 7{,}301 test). The fixed-pair shortcut baseline accuracy is
+\[
+\frac{1}{3} + \frac{2}{3}\cdot\frac{1}{23} \approx 0.3623.
+\]
+Chance is $1/23 \approx 0.0435$.
+
+\paragraph{Architectures.}
+All runs use a standard 4-layer transformer with $d_\text{model}=128$, 4 heads, $d_\text{head}=32$, $d_\text{mlp}=512$, GELU MLPs, learned positional embeddings, no LayerNorm. The transformer body has 798{,}871 parameters in every configuration; the FFN output head adds 38{,}935 head parameters ($z \in \mathbb{R}^{128} \to h \in \mathbb{R}^{256} \to \mathrm{logits} \in \mathbb{R}^{23}$).
+
+\paragraph{Configurations compared.}
+
+\begin{table}[h]
+\centering
+\caption{All runs are $p=23, m=3$, 4-layer, seed 0, AdamW lr $3\!\times\!10^{-4}$, batch 256.}
+\label{tab:setup}
+\small
+\begin{tabular}{lllrr}
+\toprule
+Run & Output head & Aux supervision & wd & max\_epochs \\
+\midrule
+\texttt{hybrid\_small\_p23\_m3\_standard\_4layer\_seed0} & linear & none & 1.0 & 8{,}000 \\
+\texttt{hybrid\_p23\_m3\_4layer\_ffn\_head\_seed0}        & FFN (hidden 256, GELU) & none & 0.1 & 10{,}000 \\
+\texttt{hybrid\_p23\_m3\_aux\_retrieval\_4layer\_seed0}   & linear & yes ($\alpha\!=\!0.5$ on $r_1, r_2$) & 0.1 & 10{,}000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textcolor{red}{\textbf{Confound to flag:}} the FFN-head run lowers weight decay from $1.0$ to $0.1$ simultaneously with introducing the FFN head, so observed differences cannot be attributed cleanly to the output head alone. The auxiliary-retrieval run uses the same weight decay but a linear head, allowing us to test whether weight decay alone would explain any improvement.
+
+\section{Results}
+
+\subsection{Accuracy comparison}
+
+\begin{table}[h]
+\centering
+\caption{Hybrid $p=23, m=3$ accuracy by output head and supervision (seed 0).}
+\label{tab:accuracy}
+\small
+\begin{tabular}{lllrrrrrrl}
+\toprule
+Run & Head & Aux & wd & best\_val & test@bv & final\_train & final\_val & gap & test/chance \\
+\midrule
+linear 2-layer        & linear & none & 1.0 & 0.333 & 0.320 & 0.321 & 0.300 & $+0.021$ & 7.4$\times$ \\
+linear 3-layer        & linear & none & 1.0 & 0.357 & 0.327 & 0.349 & 0.318 & $+0.031$ & 7.5$\times$ \\
+linear 4-layer        & linear & none & 1.0 & 0.360 & 0.336 & 0.366 & 0.345 & $+0.021$ & 7.7$\times$ \\
+\textbf{FFN-head 4-layer}    & \textbf{FFN(256, GELU)} & none & 0.1 & \textbf{0.372} & \textbf{0.379} & 0.378 & 0.359 & $+0.018$ & 8.7$\times$ \\
+\textbf{aux-retrieval 4-layer} & linear & $\alpha\!=\!0.5$ & 0.1 & \textbf{1.000} & \textbf{1.000} & 1.000 & 1.000 & $+0.000$ & 23.0$\times$ \\
+\midrule
+fixed-pair shortcut analytical baseline & --- & --- & --- & --- & 0.362 & --- & --- & --- & 8.3$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/ffn_vs_linear_baseline_accuracy.png}
+\caption{Best validation and test-at-best-val accuracy for the comparable 4-layer hybrid runs and their shallower linear-head baselines. The red dotted line marks chance ($1/23 \approx 0.0435$); the purple dashed line marks the fixed-pair shortcut baseline ($\approx 0.362$). The FFN-head sits at the shortcut plateau; auxiliary retrieval supervision rescues the task entirely.}
+\label{fig:bar}
+\end{figure}
+
+\subsection{Improvement over the matched linear-head baseline}
+
+Against \texttt{hybrid\_small\_p23\_m3\_standard\_4layer\_seed0} (linear head, $\mathrm{wd}=1.0$):
+\begin{align*}
+\Delta\mathrm{TestAcc}_{\mathrm{FFN}} &= 0.3791 - 0.3364 = +0.0427, \\
+\Delta\mathrm{ValAcc}_{\mathrm{FFN}}  &= 0.3723 - 0.3603 = +0.0120, \\
+\Delta\mathrm{TestAcc}_{\mathrm{aux}} &= 1.0000 - 0.3364 = +0.6636, \\
+\Delta\mathrm{ValAcc}_{\mathrm{aux}}  &= 1.0000 - 0.3603 = +0.6397.
+\end{align*}
+
+The FFN-head improvement is small in absolute terms ($\approx 4$ percentage points on test) and lands within the fixed-pair shortcut band. The auxiliary-retrieval rescue, by contrast, fully solves the task.
+
+\subsection{Training curves}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/ffn_head_training_curves.png}
+\caption{Training and validation curves for three 4-layer configurations. The linear-head baseline and FFN-head run both plateau near the fixed-pair shortcut. The auxiliary-retrieval rescue groks within $\sim 200$ epochs.}
+\label{fig:curves}
+\end{figure}
+
+\subsection{Train/validation gap}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.82\linewidth]{figures/ffn_train_val_gap.png}
+\caption{Final-epoch $\mathrm{train\_acc} - \mathrm{val\_acc}$. All non-aux runs show small positive gaps (no severe overfitting); the gap on the FFN-head run is comparable to the linear-head baseline. The aux-retrieval run has zero gap (both at 1.000).}
+\label{fig:gap}
+\end{figure}
+
+The FFN head does not introduce a large train/val gap, so the lack of generalisation cannot be ascribed to head-induced overfitting. Both train and val accuracies sit at the shortcut plateau.
+
+\section{Probe Diagnostics}
+
+Frozen probes train a small classifier on the frozen EQ-position residual of the linear-head models, testing whether the relevant information is present at all. A linear probe is $W z + b$; an MLP probe is $W_2\,\mathrm{GELU}(W_1 z + b_1) + b_2$ with hidden 256. Targets are the sum label, $r_1 = v(q_1)$, and $r_2 = v(q_2)$.
+
+\begin{table}[h]
+\centering
+\caption{Frozen probe test accuracy on the EQ-position residual.}
+\label{tab:probes}
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+Model & Layers & lin sum & MLP sum & lin $r_1$ & MLP $r_1$ & lin $r_2$ & MLP $r_2$ \\
+\midrule
+\texttt{hybrid\_small\_p23\_m3\_standard\_2layer\_seed0} & 2 & 0.322 & 0.322 & 0.253 & 0.328 & 0.250 & 0.319 \\
+\texttt{hybrid\_small\_p23\_m3\_standard\_3layer\_seed0} & 3 & 0.335 & 0.337 & 0.333 & 0.337 & 0.330 & 0.329 \\
+\texttt{hybrid\_small\_p23\_m3\_standard\_4layer\_seed0} & 4 & 0.338 & 0.336 & 0.340 & 0.347 & 0.348 & 0.348 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.49\linewidth}
+\includegraphics[width=\linewidth]{figures/frozen_probe_accuracy_by_target.png}
+\caption{Probe accuracy by target.}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.49\linewidth}
+\includegraphics[width=\linewidth]{figures/linear_vs_mlp_probe_accuracy.png}
+\caption{Linear probe vs MLP probe.}
+\end{subfigure}
+\caption{Frozen-probe diagnostics on the EQ residual stream of the linear-head models. Probe accuracy is at the fixed-pair plateau for every target; the MLP probe does not outperform the linear probe.}
+\label{fig:probes}
+\end{figure}
+
+\paragraph{Interpretation.}
+For all three depths the linear and MLP probes hit nearly the same ceiling around $0.33$ on every target. Following the decision tree in the probe-diagnostics handoff:
+
+\begin{itemize}
+\item Linear sum probe is no worse than MLP sum probe $\Rightarrow$ \emph{not} a case of \emph{``info is present but not linearly accessible.''}
+\item Both $r_1$ and $r_2$ probes are at the shortcut plateau $\Rightarrow$ retrieval is failing -- the queried values are not extracted at the EQ position.
+\item The MLP probe with hidden 256 has the same parameter form as the FFN output head used in the main experiment. The probe's failure predicts the FFN head's failure.
+\end{itemize}
+
+Combined with the query-conditioning diagnostic (which classifies all three linear-head models as \texttt{LIKELY\_FIXED\_PAIR\_SHORTCUT}, with predictions constant across queries for $97{-}99\%$ of contexts and counterfactual accuracy in $[0.34, 0.36]$), the evidence consistently points to a representation/retrieval failure rather than a readout bottleneck.
+
+\section{eRank Diagnostics}
+
+Endpoint eRank for the FFN-head run is recorded as \emph{not computed} (per its \texttt{run\_report\_for\_chatgpt.md}: ``Not computed (model did not meaningfully solve, or extraction failed)''). The linear-head 4-layer baseline has \texttt{endpoint\_erank.csv} available; for a fair side-by-side comparison the FFN-head's endpoint eRank would need to be recomputed from the saved \texttt{best\_val\_checkpoint.pt}. We do not include those numbers here.
+
+\section{Interpretation}
+
+The FFN output head provides an answer to the original diagnostic question:
+
+\begin{quote}
+\textbf{Is the linear output head the bottleneck for the hybrid $p=23, m=3$ task?}
+\textbf{No.} Replacing the linear head with a 2-layer GELU MLP of hidden 256 -- which is identically the form of the MLP probe -- moves test accuracy from $0.336$ to $0.379$, still within the fixed-pair shortcut plateau. Frozen MLP probes on the linear-head representations corroborate this: an MLP probe of comparable capacity, trained directly on the frozen residual, fails to exceed $0.35$ on the sum, $r_1$, or $r_2$ targets.
+\end{quote}
+
+The implication is that \emph{the transformer body never produces a representation from which the answer can be decoded by any small-capacity readout}, linear or nonlinear. The auxiliary-retrieval rescue closes this gap not by changing the readout (it keeps the linear head) but by adding training signal that forces the body to extract the queried values during the forward pass.
+
+This is consistent with the query-diagnostic verdict of \texttt{LIKELY\_FIXED\_PAIR\_SHORTCUT} on all three linear-head depths: the models converge to a query-ignoring shortcut, and the FFN head cannot rescue what the body does not compute.
+
+\paragraph{Interpretation category:}
+\texttt{NO\_MEANINGFUL\_IMPROVEMENT} on the substantive question. Because weight decay changed from $1.0$ to $0.1$ together with the output head, the small numerical improvement is also \texttt{AMBIGUOUS\_CONFOUNDED} -- but the magnitude is small enough that even attributing all of it to the FFN head would not change the conclusion.
+
+\section{Caveats}
+
+\begin{itemize}
+\item Weight decay changed between the FFN-head run ($\mathrm{wd}=0.1$) and the matched linear-head baseline ($\mathrm{wd}=1.0$). The FFN-head experiment is therefore not a clean isolated head-only intervention. A linear-head control with $\mathrm{wd}=0.1$ has not been run; the closest substitute is the aux-retrieval run (linear head, $\mathrm{wd}=0.1$, with auxiliary supervision), which solves the task, but the auxiliary supervision is the active ingredient there, not the lowered weight decay.
+\item Single seed (seed 0) for every run cited. Multi-seed replication has not been done for any of the comparisons.
+\item Architectures are not parameter-matched against the FFN-head architecture: the FFN head adds $38{,}935$ parameters on top of the 798{,}871-parameter body. The shallow linear-head baselines have the same body but fewer total parameters.
+\item The FFN-head run did not produce an endpoint eRank report. A direct geometric comparison to the linear-head baseline at the same training-time stage is therefore not in this report.
+\item Frozen probes verify what \emph{linear or small-MLP readouts} can recover from the residual; they do not rule out the possibility that a deeper or larger trained readout (or a different layer's residual) carries the answer. They do indicate that the EQ-position residual of the existing models is the wrong place to look for a query-conditioned sum.
+\item Test accuracy is used only for final evaluation at the best-validation checkpoint -- never for checkpoint selection or stopping.
+\end{itemize}
+
+\section{Next Steps}
+
+\begin{enumerate}
+\item \textbf{Linear-head control at $\mathrm{wd}=0.1$.} Run \texttt{hybrid\_small\_p23\_m3\_standard\_4layer\_seed0\_wd01}: same architecture, same training length, just lower weight decay. This isolates the weight-decay effect from the FFN-head effect and gives a defensible $\Delta\mathrm{TestAcc}$ attributable to the head.
+\item \textbf{FFN-head control at $\mathrm{wd}=1.0$.} Symmetric to the above. Together with (1), this disentangles the two confounded factors in the current rescue.
+\item \textbf{Replicate the failures across seeds 1 and 2.} If three seeds of the linear-head 4-layer model all converge to the fixed-pair shortcut and three seeds of the FFN-head + $\mathrm{wd}=0.1$ run still fail to grok, the shortcut interpretation is much more defensible than from a single seed.
+\item \textbf{Move the diagnostic upstream.} Frozen probes show the EQ-position residual lacks $r_1, r_2$. Probing earlier layers' residuals (e.g.\ post-block-2 vs post-block-3 at the query positions) can localise where retrieval would have to happen for a circuit to exist.
+\item \textbf{If the FFN head is pursued further, give it a stronger setup.} Aux retrieval supervision on top of an FFN head is the natural composition; if the body is already forced to retrieve, the head capacity might then matter for downstream addition. This is a worthwhile follow-up only if (1) and (2) confirm that the head per se is not adding signal on the standard task.
+\end{enumerate}
+
+\section*{Provenance}
+
+Source files and provenance: \texttt{outputs/ffn\_output\_head\_latex\_update/ffn\_output\_head\_source\_files.md}. Companion markdown packet: \texttt{outputs/ffn\_output\_head\_latex\_update/ffn\_output\_head\_results\_for\_chatgpt.md}.
+
+\end{document}

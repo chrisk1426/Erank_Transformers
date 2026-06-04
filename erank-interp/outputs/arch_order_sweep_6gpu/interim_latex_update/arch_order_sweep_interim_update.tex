@@ -1,0 +1,369 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{longtable}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+
+\title{Interim Update: Architecture Order and eRank Dynamics in Modular-Addition Transformers}
+\author{Christopher Kang}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textcolor{red}{\textbf{INTERIM REPORT --- 80 of 102 runs complete; 8 still running; 14 pending.}}
+\end{center}
+
+\section{Executive Summary}
+
+\begin{itemize}
+\item This is an \emph{interim} snapshot of a single-seed sweep over all balanced permutations of attention ($A$) and MLP ($M$) blocks at depths 2, 3, 4 on modular addition mod 113. Out of 102 scheduled runs (96 balanced + 6 unbalanced controls), 80 have a terminal status (76 \texttt{GROKKED} + 4 \texttt{MEMORIZED\_ONLY}), 8 are still training, and 14 are still in the queue.
+
+\item Among the 80 balanced runs that have completed, $\mathbf{Pearson(\mathrm{a\_before\_m\_score}, \mathrm{test\_acc}) = 0.479}$ but $\mathbf{Spearman = -0.033}$ --- the Pearson is driven by a small number of low-score schedules that fail; among the schedules that grok, ordering does not monotonically predict accuracy.
+
+\item The strongest pattern is in \textbf{first-block identity}, not in the overall ordering score. \textbf{Every completed schedule starting with $A$ has grokked} (48/48 = 100\%, mean test accuracy 0.998). \textbf{Schedules starting with $M$ grok 28/32 = 87.5\%} (mean test accuracy 0.878). The 4 \texttt{MEMORIZED\_ONLY} schedules are all $M$-first.
+
+\item \textbf{eRank compression is a strong predictor of grokking among completed runs:} $\mathrm{Pearson}(\mathrm{final\_rep\_eRank}, \mathrm{test\_acc}) = -0.887$. Same-sum cluster ratio (lower = better task-aligned geometry) shows $-0.799$.
+
+\item Componentwise $\Delta\!$-eRank reveals the mechanism for $M$-first failure cleanly: in MMAA and similar schedules, the leading $M$ blocks produce $\Delta\!$-eRank $\approx 0$, indicating that an MLP cannot expand a rank-1 representation when it has not yet seen position-dependent information from attention.
+
+\item Depth-4 schedules appear more tolerant of unfavorable ordering than depth-2 schedules: of the 23 depth-4 schedules completed so far, 23/23 have grokked, including schedules with low routing-before-processing score.
+
+\item These are single-seed observations and should be treated as suggestive. Re-running the strongest and weakest schedules across seeds 1 and 2 is the most important next step.
+\end{itemize}
+
+\section{Experimental Design}
+
+\paragraph{Task.}
+Modular addition $c = (a + b) \bmod 113$. Inputs are length-3 sequences \texttt{[a, b, =]}; the model predicts $c$ at position 2 over a vocabulary of size 113.
+
+\paragraph{Model.}
+Custom \texttt{BlockScheduleTransformer} ($d_\text{model}=128$, $4$ heads, $d_\text{head}=32$, $d_\text{mlp}=512$, GELU MLPs, learned positional embeddings, no LayerNorm, causal mask). Every block is either an attention-only update $R^{(k+1)} = R^{(k)} + A_k(R^{(k)})$ or an MLP-only update $R^{(k+1)} = R^{(k)} + M_k(R^{(k)})$.
+
+\paragraph{Schedules.}
+For each depth $d \in \{2,3,4\}$, every unique balanced permutation of $d$ attention blocks and $d$ MLP blocks:
+\[
+\binom{4}{2} = 6, \quad \binom{6}{3} = 20, \quad \binom{8}{4} = 70.
+\]
+Plus six unbalanced controls (all-$A$ and all-$M$ at each depth). Total: $96 + 6 = 102$ schedules. Seed = 0 only.
+
+\paragraph{Training.}
+AdamW $\mathrm{lr}=3 \cdot 10^{-4}$, weight decay $1.0$, batch 256. Validation-selected best checkpoint; test accuracy evaluated only at the best-val checkpoint. Maximum 50{,}000 epochs with early stopping if validation accuracy $\geq 0.95$ for 200 consecutive evals.
+
+\paragraph{Routing-before-processing score.}
+For a schedule of length $2d$ over blocks $C_1, C_2, \ldots, C_{2d}$, define
+\[
+S_{\mathrm{A\ before\ M}}
+= \frac{1}{d^2}
+\sum_{i:\,C_i=A} \sum_{j:\,C_j=M} \mathbf{1}[i<j].
+\]
+$S = 1$ means all $A$'s precede all $M$'s (\texttt{AAMM}, \texttt{AAAMMM}, \texttt{AAAAMMMM}). $S = 0$ means the reverse. $S \approx 0.5$ is interleaved.
+
+\paragraph{eRank.}
+For an activation matrix $X \in \mathbb{R}^{n \times d}$ (column-centered) with singular values $\sigma_i$, the effective rank is
+\[
+\mathrm{eRank}(X) = \exp\!\left( -\sum_i \frac{\sigma_i}{\sum_j \sigma_j} \log \frac{\sigma_i}{\sum_j \sigma_j} \right),
+\]
+following Roy and Vetterli (2007). Componentwise deltas are $\Delta^{(k)} = \mathrm{eRank}(R^{(k+1)}) - \mathrm{eRank}(R^{(k)})$.
+
+\section{Current Run Status}
+
+\begin{table}[h]
+\centering
+\caption{Run status by depth (interim).}
+\label{tab:status-by-depth}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Depth & Total & Complete & Grokked & Memorized & Failed-to-fit & Running & Pending\\
+\midrule
+2 & 8  & 6  & 4  & 2 & 0 & 0 & 2 \\
+3 & 22 & 20 & 18 & 2 & 0 & 0 & 2 \\
+4 & 72 & 54 & 54 & 0 & 0 & 8 & 10 \\
+\midrule
+\textbf{Total} & \textbf{102} & \textbf{80} & \textbf{76} & \textbf{4} & \textbf{0} & \textbf{8} & \textbf{14} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The remaining 22 pending/running schedules are concentrated in the depth-4 \texttt{MMAA}/\texttt{MMAAM}-prefix region (low routing-before-processing score). Depth-2 controls (\texttt{AAAA}, \texttt{MMMM}) and depth-3 controls (\texttt{AAAAAA}, \texttt{MMMMMM}) are still pending.
+
+\section{Accuracy and Grokking Results}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/accuracy_vs_a_before_m_score.png}
+  \caption{Completed balanced runs only. Test accuracy at best-validation checkpoint vs.\ $S_{A\,\text{before}\,M}$. Color by depth, marker by status. The $S=0$ corner is the only region producing \texttt{MEMORIZED\_ONLY} outcomes.}
+  \label{fig:acc-vs-score}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/grokking_status_by_schedule_score.png}
+  \caption{Status counts in five buckets of $S_{A\,\text{before}\,M}$. \texttt{MEMORIZED\_ONLY} runs concentrate at low $S$; high-$S$ buckets are entirely \texttt{GROKKED} in the completed subset.}
+  \label{fig:status-bucket}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/accuracy_vs_num_alternations.png}
+  \caption{Test accuracy vs.\ number of $A\!\leftrightarrow\! M$ transitions in the schedule. Among completed runs, alternation count is weakly positively correlated with accuracy.}
+  \label{fig:acc-vs-alt}
+\end{figure}
+
+\subsection{Top 10 schedules by test accuracy (completed runs only)}
+
+\begin{table}[h]
+\centering
+\caption{Top 10 completed schedules by $\mathrm{test\_acc@best\_val}$. All grokked.}
+\label{tab:top10}
+\small
+\begin{tabular}{rrlrrrrrl}
+\toprule
+Rank & Depth & Schedule & $S$ & alt & best\_val & test@best\_val & $\tau$ & status\\
+\midrule
+1  & 4 & AAMMAAMM & 0.75 & 3 & 1.0000 & 1.0000 & --    & GROKKED \\
+2  & 4 & AMAMMAAM & 0.56 & 5 & 1.0000 & 1.0000 & --    & GROKKED \\
+3  & 3 & MAAMAM   & 0.56 & 4 & 1.0000 & 0.9999 & 4075  & GROKKED \\
+4  & 4 & AAAMAMMM & 0.94 & 3 & 1.0000 & 0.9998 & --    & GROKKED \\
+5  & 4 & AAAMMAMM & 0.88 & 3 & 1.0000 & 0.9998 & --    & GROKKED \\
+6  & 3 & MAMAMA   & 0.33 & 5 & 1.0000 & 0.9998 & 7350  & GROKKED \\
+7  & 2 & AMAM     & 0.75 & 3 & 1.0000 & 0.9994 & 7025  & GROKKED \\
+8  & 3 & MAMAAM   & 0.44 & 4 & 1.0000 & 0.9994 & 3125  & GROKKED \\
+9  & 4 & AMAAMMMA & 0.62 & 4 & 1.0000 & 0.9991 & --    & GROKKED \\
+10 & 4 & AMAMAMAM & 0.62 & 7 & 1.0000 & 0.9991 & --    & GROKKED \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Bottom 10 / failed schedules (completed runs only)}
+
+\begin{table}[h]
+\centering
+\caption{Lowest-performing completed schedules.}
+\label{tab:bottom10}
+\small
+\begin{tabular}{rlrrrrl}
+\toprule
+Depth & Schedule & $S$ & alt & best\_val & test@best\_val & status\\
+\midrule
+2 & MAMA     & 0.25 & 3 & 0.009 & 0.004 & MEMORIZED\_ONLY \\
+2 & MMAA     & 0.00 & 1 & 0.017 & 0.006 & MEMORIZED\_ONLY \\
+3 & MMAMAA   & 0.11 & 3 & 0.014 & 0.012 & MEMORIZED\_ONLY \\
+3 & MMMAAA   & 0.00 & 1 & 0.013 & 0.013 & MEMORIZED\_ONLY \\
+3 & AAAMMM   & 1.00 & 1 & 1.000 & 0.981 & GROKKED \\
+2 & AAMM     & 1.00 & 1 & 0.995 & 0.987 & GROKKED \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 4 \texttt{MEMORIZED\_ONLY} schedules so far are all depth 2 or 3 and all start with $M$. No depth-4 schedule has failed in the completed subset.
+
+\subsection{Correlations}
+
+\begin{table}[h]
+\centering
+\caption{Correlations across $n = 80$ completed balanced schedules.}
+\label{tab:correlations}
+\begin{tabular}{lrr}
+\toprule
+Pair & Pearson & Spearman \\
+\midrule
+$S_{A\,\text{before}\,M}$ vs.\ test\_acc          & $+0.479$ & $-0.033$ \\
+num\_alternations vs.\ test\_acc                  & $+0.281$ & $+0.336$ \\
+$\mathrm{final\_rep\_eRank}$ vs.\ test\_acc       & $\mathbf{-0.887}$ & --- \\
+top-5 singular mass vs.\ test\_acc                & $+0.500$ & --- \\
+same-sum ratio vs.\ test\_acc                     & $\mathbf{-0.799}$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Interpretation.}
+The geometry correlations (eRank, same-sum) are much stronger than the ordering correlation, suggesting that block ordering matters mostly through whether it enables the model to compress into a task-aligned geometry. The Spearman of $-0.03$ for ordering vs.\ accuracy shows that the Pearson is driven by a few extreme failures: among the 76 schedules that grokked, ordering does not predict accuracy ranking.
+
+\subsection{Routing-before-processing buckets}
+
+\begin{table}[h]
+\centering
+\caption{Completed balanced schedules grouped by $S_{A\,\text{before}\,M}$.}
+\label{tab:buckets}
+\begin{tabular}{lrrrr}
+\toprule
+Bucket & $S$ range & $n$ & mean test\_acc & \% grokked\\
+\midrule
+Low    & $\leq 0.33$ & 11 & 0.648 (sd 0.464) & 63.6\% \\
+Middle & $(0.33, 0.67)$ & 46 & 0.998 (sd 0.002) & 100\%  \\
+High   & $\geq 0.67$ & 23 & 0.997 (sd 0.004) & 100\%  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All four observed failures sit in the \emph{low} bucket. Both the middle and high buckets are 100\% grokked in the completed subset.
+
+\subsection{First and last block}
+
+\begin{table}[h]
+\centering
+\caption{Outcome by first and last block identity (completed balanced schedules).}
+\label{tab:first-last-block}
+\begin{tabular}{lrrr@{\hspace{2em}}lrrr}
+\toprule
+First block & $n$ & mean acc & \% grokked & Last block & $n$ & mean acc & \% grokked\\
+\midrule
+A & 48 & 0.998 & 100\%  & A & 37 & 0.894 & 89\%  \\
+M & 32 & 0.878 & 87.5\% & M & 43 & 0.998 & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{First-block identity is the cleanest single binary predictor of grokking.} Every $A$-first schedule has grokked; the four observed failures are all $M$-first. Mirror image at the end: every $M$-last schedule has grokked; the failures are $A$-last.
+
+\section{Componentwise eRank}
+
+For a schedule of length $K = 2d$, the residual stream evolves
+\[
+R^{(0)} \to R^{(1)} \to \cdots \to R^{(K)},
+\]
+and $\Delta^{(k)} = \mathrm{eRank}(R^{(k+1)}) - \mathrm{eRank}(R^{(k)})$ attributes the per-block representational change.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/depth2_componentwise_erank_heatmap.png}
+  \caption{Depth-2 (4-block) componentwise $\Delta\!$-eRank at best-val. Rows sorted by $S_{A\,\text{before}\,M}$ (high at top). The failed schedules \texttt{MMAA} and \texttt{MAMA} show $\Delta \approx 0$ in their leading $M$ blocks.}
+  \label{fig:cw-d2}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/depth3_componentwise_erank_heatmap.png}
+  \caption{Depth-3 componentwise $\Delta\!$-eRank at best-val. Same pattern: leading $M$ blocks contribute essentially zero geometric change. Compensating $A$-block contributions in later positions are large.}
+  \label{fig:cw-d3}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/depth4_componentwise_erank_heatmap.png}
+  \caption{Depth-4 componentwise $\Delta\!$-eRank for the 54 completed schedules. Leading-$M$ schedules in the bottom rows still show small $\Delta$ on early blocks, but at this depth all completed schedules grok and the geometry is more uniform.}
+  \label{fig:cw-d4}
+\end{figure}
+
+\subsection{Representative per-block $\Delta\!$-eRank values}
+
+\begin{table}[h]
+\centering
+\caption{Per-block $\Delta\!$-eRank at the best-validation checkpoint, for representative schedules. Block-index 0 = first block.}
+\label{tab:representative-cw}
+\small
+\begin{tabular}{lll}
+\toprule
+Schedule & Status & $\Delta\!$-eRank per block ($A$/$M$)\\
+\midrule
+\texttt{AAMM}     & GROKKED          & $A_0\!=\!+3.83,\ A_1\!=\!+1.58,\ M_2\!=\!+1.19,\ M_3\!=\!+2.66$ \\
+\texttt{AMAM}     & GROKKED          & $A_0\!=\!+8.27,\ M_1\!=\!-1.74,\ A_2\!=\!+5.16,\ M_3\!=\!+11.36$ \\
+\texttt{MAMA}     & MEMORIZED\_ONLY  & $M_0\!=\!+0.00,\ A_1\!=\!+13.28,\ M_2\!=\!+30.99,\ A_3\!=\!+28.82$ \\
+\texttt{MMAA}     & MEMORIZED\_ONLY  & $M_0\!=\!+0.00,\ M_1\!=\!+0.00,\ A_2\!=\!+32.65,\ A_3\!=\!+41.43$ \\
+\texttt{AAAMMM}   & GROKKED          & $A_0\!=\!+2.92,\ A_1\!=\!-0.31,\ A_2\!=\!+0.70,\ M_3\!=\!+1.13,\ M_4\!=\!+1.77,\ M_5\!=\!-0.15$ \\
+\texttt{MMMAAA}   & MEMORIZED\_ONLY  & $M_0\!=\!+0.00,\ M_1\!=\!+0.00,\ M_2\!=\!+0.00,\ A_3\!=\!+29.98,\ A_4\!=\!+25.41,\ A_5\!=\!+12.82$ \\
+\texttt{AAAAMMMM} & GROKKED          & $A_0\!=\!+9.60,\ A_1\!=\!-0.17,\ A_2\!=\!-0.50,\ A_3\!=\!+0.54,\ M_4\!=\!+0.16,\ M_5\!=\!+0.92,\ M_6\!=\!+5.66,\ M_7\!=\!+5.45$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Mechanistic interpretation (tentative).}
+Before any $A$ block has acted, every position in the residual stream depends only on the (positional + token) embedding of its own input, and the per-position activation distribution across the batch is effectively rank-1 in the dimension that matters for prediction. An MLP applied positionwise to a stream with this structure cannot expand its eRank, because it acts identically on each batch row (modulo the constant positional embedding). This is exactly what we observe: $M$-only blocks before any $A$ have $\Delta\!$-eRank within numerical noise of zero. Once an attention block runs, the stream becomes a function of all input positions and subsequent MLP blocks become useful. Schedules that defer attention pay the cost twice: they waste their leading $M$ blocks, and they crowd the remaining $A$ blocks into a smaller depth budget for routing.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/endpoint_sum_delta_A_M_by_schedule.png}
+  \caption{$\sum_A \Delta\!$-eRank and $\sum_M \Delta\!$-eRank per schedule. $M$-first schedules need very large $\sum_A$ near the output to compensate for the empty $M$ blocks at the input side.}
+  \label{fig:sum-delta}
+\end{figure}
+
+\section{Training-Time Dynamics and Compression}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/representative_training_time_erank_curves.png}
+  \caption{Validation accuracy and final-residual eRank over training, for representative schedules. Grokking is accompanied by a fall in final-rep eRank in successful schedules. Memorized schedules retain higher eRank without generalizing.}
+  \label{fig:tt-erank}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/same_sum_ratio_over_time_representative.png}
+    \caption{Same-sum within/between cluster ratio over training for representative schedules. Lower = more task-aligned geometry.}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/erank_vs_top5_mass_representative.png}
+    \caption{Final-rep eRank vs.\ top-5 singular mass at best-val. Compression and spectral concentration both correlate with grokking.}
+  \end{subfigure}
+  \caption{Spectral compression and task-aligned clustering accompany grokking.}
+  \label{fig:spectrum-clustering}
+\end{figure}
+
+\paragraph{Caveat on geometric metrics.}
+$\Delta\!$-eRank, top-$k$ mass, and same-sum clustering all show strong correlation with test accuracy among completed runs, but eRank changes are geometric and need not reflect task-relevant computation. The memorized schedules retain non-trivial eRank in their final $A$ blocks even though they fail to generalize, reinforcing that geometric compression is necessary-looking but not sufficient by itself.
+
+\section{Potential Findings (tentative, single-seed)}
+
+\begin{enumerate}
+\item \textbf{First-block identity is the cleanest predictor of grokking observed so far.} Every $A$-first schedule has grokked; every observed failure is $M$-first. The $M$-first failure rate in the completed subset is 4/32 = 12.5\%.
+
+\item \textbf{Routing-before-processing schedules do not need to be extreme to succeed.} The middle bucket ($0.33 < S < 0.67$, e.g.\ schedules like \texttt{AMAM} and \texttt{MAMAMA}) groks 100\% of the time and produces some of the highest test accuracies. Strict \texttt{AAAMMM}-style ordering ($S=1$) is not required.
+
+\item \textbf{$M$-blocks before any $A$ produce no representational change.} The leading $M$ blocks of \texttt{MMAA}, \texttt{MAMA}, \texttt{MMMAAA}, etc.\ show $\Delta\!$-eRank $\approx 0$ at best-val. This is a mechanistic signature: an MLP on a position-symmetric rank-1 stream cannot expand its rank.
+
+\item \textbf{eRank compression is consistent with grokking but not specific to it.} Strongly grokked schedules tend to have low final-rep eRank and high top-5 singular mass. Failed schedules can still have non-trivial eRank growth in their final $A$ blocks --- compression is necessary-looking but not sufficient by itself.
+
+\item \textbf{Depth dilutes the ordering effect.} Depth-4 schedules grok 100\% (54/54) in the completed subset, including some low-score orderings. The depth-2 \texttt{MMAA}/\texttt{MAMA} failures are the cleanest demonstrations of the routing-before-processing constraint; depth 3 and 4 appear more forgiving. The remaining 18 depth-4 schedules (low-score region) will refine this estimate.
+\end{enumerate}
+
+\section{Caveats}
+
+\begin{itemize}
+\item \textbf{Interim.} 80/102 runs are complete; the remaining 22 are concentrated in the low-$S$ depth-4 region. If those runs reveal late depth-4 failures, the depth-tolerance finding would weaken.
+
+\item \textbf{Single seed (seed = 0).} No multi-seed reliability check.
+
+\item \textbf{Architectures are not parameter-matched.} A-only blocks have no MLP; M-only blocks have no attention. At $d_\text{model}=128, d_\text{mlp}=512$: \texttt{AAAA} has 294k params, \texttt{MMMM} has 556k, \texttt{AMAM}-style schedules have 425k. Capacity differences confound architecture with ordering.
+
+\item \textbf{Failed-model eRank is not successful-circuit geometry.} The geometric metrics for \texttt{MMAA}, \texttt{MAMA}, etc.\ describe failed models and should not be over-interpreted as evidence about the underlying task structure.
+
+\item \textbf{Geometric correlation $\neq$ causation.} eRank, top-$k$ mass, and same-sum clustering all correlate with test accuracy at best-val, but the direction of dependence is not established from this data alone.
+
+\item \textbf{Custom transformer.} The \texttt{BlockScheduleTransformer} is not \texttt{HookedTransformer}; it mirrors the modular-addition baseline (no LayerNorm, GELU MLPs, learned positional embeddings, causal mask) but small numerical differences from prior \texttt{HookedTransformer}-based runs are possible.
+
+\item \textbf{Unbalanced controls (all-A and all-M at each depth) are not yet completed.} They are currently pending and will be most informative as baselines once they run.
+\end{itemize}
+
+\section{Next Steps}
+
+\begin{enumerate}
+\item Finish the remaining 22 runs (mostly depth-4 low-$S$ schedules + all 6 controls).
+
+\item Re-run the top-3 grokking schedules and the bottom-3 failing schedules with seeds 1 and 2 to confirm single-seed observations.
+
+\item Parameter-match a small subset: replicate \texttt{AAMM} vs.\ \texttt{MMAA} with $d_\text{mlp}$ tuned so that the two architectures have identical total parameter counts, to disentangle ordering from capacity.
+
+\item Investigate the depth-4 mid-$S$ schedules that grok despite low alternation count (e.g.\ \texttt{AAAMAMMM}, \texttt{AAAMMAMM}) --- these are candidates for further mechanistic study of the late-attention pattern.
+
+\item Add denser training-time checkpointing around the grokking phase transition for the strongest schedule at each depth, to localize when the final-rep eRank compresses.
+
+\item Once the unbalanced controls (\texttt{AAAA}, \texttt{MMMM}, etc.) finish, compare them as parameter-mismatched but pure-component baselines.
+\end{enumerate}
+
+\section*{Acknowledgements / sources}
+
+Source data and aggregation scripts: see \texttt{outputs/arch\_order\_sweep\_6gpu/} and \texttt{scripts/aggregate\_arch\_order\_sweep.py}. Full implementation handoff: \texttt{/jumbo/lisp/f006j44/erank/arch\_order\_sweep\_implementation.md}.
+
+\end{document}

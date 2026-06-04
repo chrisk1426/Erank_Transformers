@@ -1,0 +1,2 @@
+model,n_layers,ckpt_kind,ckpt_epoch,test_n,overall_accuracy,best_fixed_pair_baseline,best_fixed_pair_baseline_acc,qpair_accuracy_spread,counterfactual_accuracy,fraction_constant_prediction_across_queries,verdict,match_rate_s01,match_rate_s02,match_rate_s12
+hybrid_p23_m3_aux_retrieval_4layer_seed0,4,best_val,182,7301,1.0,always_s01,0.36857964662375015,0.0,1.0,0.0015842281288505544,LIKELY_QUERY_CONDITIONED,0.36857964662375015,0.362279139843857,0.3594028215312971

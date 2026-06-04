@@ -1,0 +1,430 @@
+{
+  "metadata": {
+    "generated": "2026-05-12",
+    "author": "Christopher Kang",
+    "host": "lisplab1.thayer.dartmouth.edu",
+    "source_packet_md": "outputs/advisor_latest_update_packet/advisor_latest_research_packet.md"
+  },
+  "executive_summary": [
+    "Core seed-robust (ROBUST, n=3): standard 2-layer transformer solves modadd p=113 (test=0.99996\u00b10.00006); attention-only at chance (0.0065\u00b10.0019). Key-value retrieval: both standard and attention-only solve (1.000\u00b10.000).",
+    "Causal ablation (ROBUST, n=3): zeroing any single component drops modadd test by \u0394\u2248+0.91-0.99; KV layer-1 attention is the most essential single component for both tasks. eRank growth alone does not identify causal components.",
+    "Grokking geometry (ROBUST, n=3): eRank peaks at memorization, drops through grokking; same-sum \u03c1 drops from ~1.0 to <0.1; top-5 singular mass increases; L1 \u0394_MLP transitions from negative to positive.",
+    "Layer-0 freezing (PILOT, n=3 seeds, 4 variants): all 12 runs grokked. Trainable layer-0 is not necessary. Freezing slows grokking 20-90%. Compression migrates: freeze_A0_M0 -> L1 picks up more compression (\u0394 -2.91 vs -1.70). freeze_A0 -> M0 picks up much more compression (\u0394 -8.16 vs -0.93).",
+    "Architecture-order sweep (INTERIM in seed coverage, complete in schedule coverage): 102 schedules at depths 2/3/4, single seed. 93 GROKKED, 5 MEMORIZED_ONLY, 4 FAILED_TO_FIT. First-block identity is the cleanest predictor (A-first: 48/48 grokked; M-first: 44/48). Pearson(final_rep_eRank, test_acc) = -0.866 \u2014 geometry beats ordering.",
+    "Striking single-seed control: depth4_control_AAAAAAAA (8 attention layers, no MLP) grokked at test=1.000 on modadd p=113. Contradicts the 2-layer attention-only failure. Worth multi-seed replication.",
+    "Hybrid retrieve-then-add task (FAILED / DIAGNOSTIC): p=23,m=3 plateaus at fixed-pair shortcut (~37%) for linear and FFN heads. Aux-retrieval supervision rescues to 100% with a linear head. Bottleneck is training signal, not readout.",
+    "Caveat: layer-0 freezing is the only new multi-seed result. Architecture-order and hybrid analyses are seed=0 only. Multi-seed replication of striking single-seed findings is the highest-priority next step."
+  ],
+  "recommended_slides": [
+    {
+      "n": 1,
+      "title": "Title / research question",
+      "main_message": "Identifying attention vs MLP roles in tiny transformers via eRank, ablation, freezing, and architecture-order interventions.",
+      "figure": null,
+      "key_eq": null
+    },
+    {
+      "n": 2,
+      "title": "Method: eRank + residual-stream hooks",
+      "main_message": "eRank = exp(H of singular values). \u0394_attn / \u0394_MLP attribute representational change per component.",
+      "figure": "fig_core_erank_totals.png",
+      "key_eq": "\u0394_attn^(\u2113) = eRank(R_mid) - eRank(R_pre); \u0394_MLP^(\u2113) = eRank(R_post) - eRank(R_mid)"
+    },
+    {
+      "n": 3,
+      "title": "Core seed-robust result",
+      "main_message": "Modadd: standard solves, attention-only at chance. KV: both solve.",
+      "figure": "fig_core_accuracy_summary.png",
+      "key_eq": null
+    },
+    {
+      "n": 4,
+      "title": "Ablation: geometry vs causality",
+      "main_message": "Zeroing any single component crashes both tasks; ablation needed to identify necessity.",
+      "figure": "fig_ablation_bar_chart.png",
+      "key_eq": null
+    },
+    {
+      "n": 5,
+      "title": "Graded ablation: dose-response",
+      "main_message": "Necessary != fragile. Smooth degradation reveals sensitivity profiles.",
+      "figure": "fig_graded_ablation_dose_response.png",
+      "key_eq": null
+    },
+    {
+      "n": 6,
+      "title": "Grokking = compression + task-aligned geometry",
+      "main_message": "eRank drops, top-k mass rises, same-sum \u03c1 \u2192 0 during grokking.",
+      "figure": [
+        "fig_grokking_erank_over_time.png",
+        "fig_same_sum_clustering.png",
+        "fig_singular_spectrum.png"
+      ],
+      "key_eq": "\u03c1 = D_within / D_between"
+    },
+    {
+      "n": 7,
+      "title": "Latest result: layer-0 freezing",
+      "main_message": "All 12 runs grok. Trainable layer-0 is NOT necessary; freezing slows grokking 20-90%.",
+      "figure": [
+        "fig_layer0_freeze_grokking_time.png",
+        "fig_layer0_freeze_layerwise_deltas.png"
+      ],
+      "key_eq": null
+    },
+    {
+      "n": 8,
+      "title": "Compression is mobile",
+      "main_message": "freeze_A0_M0 \u2192 L1 picks up compression; freeze_A0 \u2192 M0 compresses dramatically more.",
+      "figure": [
+        "fig_layer0_freeze_mlp_delta_normal.png",
+        "fig_layer0_freeze_mlp_delta_freezeA0M0.png"
+      ],
+      "key_eq": null
+    },
+    {
+      "n": 9,
+      "title": "Architecture-order sweep (102 schedules)",
+      "main_message": "First-block identity is the cleanest binary predictor. Geometry beats ordering.",
+      "figure": [
+        "fig_arch_order_accuracy_vs_score.png",
+        "fig_arch_order_status_by_score.png"
+      ],
+      "key_eq": "S_{A before M} = (1/d\u00b2) \u03a3\u1d62 \u03a3\u2c7c 1[i<j, C\u1d62=A, C\u2c7c=M]"
+    },
+    {
+      "n": 10,
+      "title": "Architecture-order: per-block eRank",
+      "main_message": "M-first failed schedules show \u0394_MLP \u2248 0 in leading M blocks; depth-4 recovers.",
+      "figure": [
+        "fig_arch_order_erank_heatmap_d2.png",
+        "fig_arch_order_erank_heatmap_d4.png"
+      ],
+      "key_eq": null
+    },
+    {
+      "n": 11,
+      "title": "Geometry predicts grokking, ordering doesn't (rank-wise)",
+      "main_message": "Pearson(final_rep_eRank, acc) = -0.866; Spearman(score, acc) \u2248 0.",
+      "figure": "fig_arch_order_erank_vs_top5.png",
+      "key_eq": null
+    },
+    {
+      "n": 12,
+      "title": "Hybrid retrieve-add: failure-mode analysis",
+      "main_message": "p=23 plateaus at fixed-pair shortcut; FFN head doesn't help; aux-retrieval rescues to 100%.",
+      "figure": [
+        "fig_hybrid_ffn_vs_linear.png",
+        "fig_hybrid_probe_by_target.png"
+      ],
+      "key_eq": null
+    },
+    {
+      "n": 13,
+      "title": "Novelty, caveats, next steps",
+      "main_message": "Layer-0 freezing + arch-order sweep + per-block \u0394_eRank are the novel angles. Multi-seed replication is the main next step.",
+      "figure": null,
+      "key_eq": null
+    }
+  ],
+  "key_results": {
+    "core": {
+      "modular_addition_standard_n3": {
+        "mean_test_acc": 0.99996,
+        "std": 6.46e-05
+      },
+      "modular_addition_attention_only_n3": {
+        "mean_test_acc": 0.00653,
+        "std": 0.00189,
+        "interpretation": "at chance"
+      },
+      "key_value_standard_n3": {
+        "mean_test_acc": 1.0,
+        "std": 0.0
+      },
+      "key_value_attention_only_n3": {
+        "mean_test_acc": 1.0,
+        "std": 0.0,
+        "interpretation": "attention-sufficient"
+      },
+      "chance_p113": 0.008849557522123894,
+      "status": "ROBUST"
+    },
+    "ablation": {
+      "key_value_layer0_attn_delta_test": 0.7169,
+      "key_value_layer0_mlp_delta_test": 0.9512,
+      "key_value_layer1_attn_delta_test": 0.966,
+      "key_value_layer1_mlp_delta_test": 0.6741,
+      "modular_addition_layer0_attn_delta_test": 0.9095,
+      "modular_addition_layer0_mlp_delta_test": 0.9198,
+      "modular_addition_layer1_attn_delta_test": 0.9894,
+      "modular_addition_layer1_mlp_delta_test": 0.9509,
+      "status": "ROBUST",
+      "n_seeds": 3,
+      "graded_ablation_highlights": {
+        "kv_l1_attention_acc_at_r0.5": 0.8274,
+        "kv_l0_mlp_acc_at_r0.5": 0.6174,
+        "modular_l1_attention_acc_at_r0.5": 0.9582,
+        "modular_l1_mlp_acc_at_r0.5": 0.9993
+      }
+    },
+    "grokking_geometry": {
+      "n_seeds": 3,
+      "seed_taus": {
+        "seed_0": 4506,
+        "seed_1": 5363,
+        "seed_2": 8824
+      },
+      "compression_signature": "eRank peaks at memorization, drops through grokking",
+      "same_sum_at_init": 1.343,
+      "same_sum_at_memorization": "\u22481.0 (no class structure)",
+      "same_sum_at_best_val": "<0.1 (task-aligned)",
+      "status": "ROBUST (dense seed 0, sparser seeds 1-2)"
+    },
+    "layer0_freezing": {
+      "n_seeds": 3,
+      "variants": [
+        "normal",
+        "freeze_A0",
+        "freeze_M0",
+        "freeze_A0_M0"
+      ],
+      "all_grokked": true,
+      "tau_0.95_mean": {
+        "normal": 3092,
+        "freeze_A0": 3717,
+        "freeze_M0": 3942,
+        "freeze_A0_M0": 5850
+      },
+      "test_acc_mean": {
+        "normal": 0.9984,
+        "freeze_A0": 0.9973,
+        "freeze_M0": 0.9975,
+        "freeze_A0_M0": 0.998
+      },
+      "layer0_delta_mlp_best_val": {
+        "normal": -0.93,
+        "freeze_A0": -8.156,
+        "freeze_M0": 1.569,
+        "freeze_A0_M0": -1.336
+      },
+      "layer1_delta_mlp_best_val": {
+        "normal": -1.702,
+        "freeze_A0": -2.085,
+        "freeze_M0": -2.015,
+        "freeze_A0_M0": -2.912
+      },
+      "key_finding": "Trainable layer-0 is NOT necessary for grokking. Compression migrates: freeze_A0 \u2192 M0 compresses much more (-8.16); freeze_A0_M0 \u2192 L1 picks up more compression (-2.91 vs -1.70).",
+      "status": "PILOT"
+    },
+    "architecture_order": {
+      "n_schedules": 102,
+      "n_seeds": 1,
+      "status_counts": {
+        "GROKKED": 93,
+        "MEMORIZED_ONLY": 5,
+        "FAILED_TO_FIT": 4
+      },
+      "by_depth": {
+        "2": {
+          "GROKKED": 4,
+          "MEMORIZED": 3,
+          "FAILED": 1,
+          "total": 8
+        },
+        "3": {
+          "GROKKED": 18,
+          "MEMORIZED": 2,
+          "FAILED": 2,
+          "total": 22
+        },
+        "4": {
+          "GROKKED": 71,
+          "MEMORIZED": 0,
+          "FAILED": 1,
+          "total": 72
+        }
+      },
+      "first_block_A_grok_rate": "48/48 = 1.000",
+      "first_block_M_grok_rate": "44/48 = 0.917",
+      "last_block_A_grok_rate": "44/48 = 0.917",
+      "last_block_M_grok_rate": "48/48 = 1.000",
+      "correlations_balanced_n96": {
+        "pearson_score_acc": 0.361,
+        "spearman_score_acc": 0.02,
+        "pearson_alternations_acc": 0.255,
+        "spearman_alternations_acc": 0.302,
+        "pearson_final_rep_erank_acc": -0.866,
+        "pearson_top5_mass_acc": 0.473,
+        "pearson_same_sum_acc": -0.786
+      },
+      "striking_control": "depth4_control_AAAAAAAA (8 attention layers, no MLP) grokked at test=1.000",
+      "key_finding": "First-block identity is the cleanest binary predictor. Geometric eRank compression (Pearson -0.866) beats ordering (Pearson +0.36, Spearman 0.02).",
+      "status": "INTERIM (single seed)"
+    },
+    "hybrid": {
+      "p": 23,
+      "m": 3,
+      "linear_4layer_wd1.0_test": 0.336,
+      "ffn_head_4layer_wd0.1_test": 0.379,
+      "aux_retrieval_4layer_wd0.1_test": 1.0,
+      "fixed_pair_shortcut_analytical": 0.362,
+      "query_diagnostic_verdict": "LIKELY_FIXED_PAIR_SHORTCUT (all 3 depths)",
+      "frozen_probe_linear_sum_test": 0.338,
+      "frozen_probe_mlp_sum_test": 0.336,
+      "key_finding": "FFN head doesn't help. Probes (linear \u2248 MLP) show information not present in residual. Aux supervision rescues. Bottleneck = training signal, not readout.",
+      "status": "FAILED / DIAGNOSTIC"
+    }
+  },
+  "figures": [
+    {
+      "id": "fig_core_accuracy_summary",
+      "slide": 3,
+      "what": "Test acc per task \u00d7 architecture across seeds"
+    },
+    {
+      "id": "fig_core_erank_totals",
+      "slide": 2,
+      "what": "\u03a3 \u0394_attn and \u03a3 \u0394_MLP per condition"
+    },
+    {
+      "id": "fig_ablation_bar_chart",
+      "slide": 4,
+      "what": "Mean \u0394 test_acc per component \u00d7 task"
+    },
+    {
+      "id": "fig_graded_ablation_dose_response",
+      "slide": 5,
+      "what": "Dose-response curves r \u2208 [0,1]"
+    },
+    {
+      "id": "fig_grokking_erank_over_time",
+      "slide": 6,
+      "what": "eRank vs epoch aligned by \u03c4 (3 seeds)"
+    },
+    {
+      "id": "fig_same_sum_clustering",
+      "slide": 6,
+      "what": "\u03c1 vs epoch aligned by \u03c4"
+    },
+    {
+      "id": "fig_singular_spectrum",
+      "slide": 6,
+      "what": "Singular spectrum pre vs post grokking"
+    },
+    {
+      "id": "fig_topk_mass_over_time",
+      "slide": 6,
+      "what": "Top-k singular mass over training"
+    },
+    {
+      "id": "fig_layer1_delta_mlp_over_time",
+      "slide": 6,
+      "what": "\u0394_MLP[1] transitions from \u2212 to +"
+    },
+    {
+      "id": "fig_layer0_freeze_grokking_time",
+      "slide": 7,
+      "what": "\u03c4 and test acc per variant (mean\u00b1std)"
+    },
+    {
+      "id": "fig_layer0_freeze_layerwise_deltas",
+      "slide": 7,
+      "what": "Best-val \u0394 per layer \u00d7 variant"
+    },
+    {
+      "id": "fig_layer0_freeze_mlp_delta_normal",
+      "slide": 8,
+      "what": "\u0394_MLP per layer over training (normal)"
+    },
+    {
+      "id": "fig_layer0_freeze_mlp_delta_freezeA0M0",
+      "slide": 8,
+      "what": "L1 picks up compression (freeze_A0_M0)"
+    },
+    {
+      "id": "fig_layer0_freeze_final_rep_erank",
+      "slide": 7,
+      "what": "Final-rep eRank trajectory per variant"
+    },
+    {
+      "id": "fig_layer0_freeze_same_sum_over_time",
+      "slide": 7,
+      "what": "Same-sum \u03c1 over time per variant"
+    },
+    {
+      "id": "fig_arch_order_accuracy_vs_score",
+      "slide": 9,
+      "what": "Acc vs a_before_m_score scatter"
+    },
+    {
+      "id": "fig_arch_order_status_by_score",
+      "slide": 9,
+      "what": "Stacked status counts by score bucket"
+    },
+    {
+      "id": "fig_arch_order_accuracy_vs_alternations",
+      "slide": 9,
+      "what": "Acc vs alternations scatter"
+    },
+    {
+      "id": "fig_arch_order_erank_heatmap_d2",
+      "slide": 10,
+      "what": "Per-block \u0394_eRank depth 2"
+    },
+    {
+      "id": "fig_arch_order_erank_heatmap_d3",
+      "slide": 10,
+      "what": "Per-block \u0394_eRank depth 3"
+    },
+    {
+      "id": "fig_arch_order_erank_heatmap_d4",
+      "slide": 10,
+      "what": "Per-block \u0394_eRank depth 4"
+    },
+    {
+      "id": "fig_arch_order_erank_vs_top5",
+      "slide": 11,
+      "what": "eRank vs top-5 mass scatter"
+    },
+    {
+      "id": "fig_hybrid_ffn_vs_linear",
+      "slide": 12,
+      "what": "Hybrid FFN vs linear vs aux-retrieval"
+    },
+    {
+      "id": "fig_hybrid_probe_by_target",
+      "slide": 12,
+      "what": "Frozen probe accuracy by target"
+    },
+    {
+      "id": "fig_hybrid_probe_linear_vs_mlp",
+      "slide": 12,
+      "what": "Linear vs MLP probe (info not in residual)"
+    },
+    {
+      "id": "fig_hybrid_candidate_match_rates",
+      "slide": 12,
+      "what": "Shortcut signature: Pr[pred=s\u1d62\u2c7c]"
+    }
+  ],
+  "caveats": [
+    "Layer-0 freezing is the only new multi-seed result. Arch-order sweep and hybrid analyses are seed=0 only.",
+    "Architecture variants are NOT parameter-matched. Pure-A schedules have fewer parameters than mixed or pure-M.",
+    "Frozen \u2260 ablated. Frozen-from-init layers remain in the forward pass with random weights.",
+    "Failed-model eRank is not successful-circuit geometry. Hybrid eRank trajectories should not be over-interpreted.",
+    "Early-layer ablations cascade downstream; single-component \u0394 test_acc is not easily decomposable.",
+    "Dense grokking trajectories exist only for seed 0; seeds 1, 2 have sparser sampling.",
+    "Freezing from initialization is not the same as freezing after memorization.",
+    "eRank is geometric, not causal; pair with ablation or same-sum clustering.",
+    "Hybrid task is not solved end-to-end with natural training signal \u2014 aux-retrieval rescue is a diagnostic, not a main result."
+  ],
+  "next_steps": [
+    "Multi-seed the most surprising single-seed results: (a) depth4_control_AAAAAAAA replication; (b) freeze_A0 \u2192 \u0394_MLP[0] = \u22128.16 replication.",
+    "Freeze M0 (and A0) AFTER memorization rather than from random init (the doc's flagship follow-up).",
+    "Parameter-match key arch-order variants (AAMM vs MMAA with equalized total params).",
+    "Run M1 and M2 freeze variants for comparison (symmetric to layer-0 freezing).",
+    "Test causal sufficiency of frozen-trained models via post-hoc ablation.",
+    "Treat hybrid retrieve-add as a failure-mode case study; pursue either supervision-free objectives for query-conditioned retrieval or a different task."
+  ]
+}

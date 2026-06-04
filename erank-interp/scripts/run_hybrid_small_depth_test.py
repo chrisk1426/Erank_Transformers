@@ -105,7 +105,7 @@ def label_sanity_check(train_loader, p, num_kv_pairs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_layers", type=int, required=True, choices=[3, 4])
+    parser.add_argument("--n_layers", type=int, required=True, choices=[2, 3, 4])
     args = parser.parse_args()
 
     n_layers = args.n_layers

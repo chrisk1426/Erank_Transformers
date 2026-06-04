@@ -1,0 +1,26 @@
+============================================================
+LABEL SANITY CHECK - 20 examples (sum + r1 + r2)
+============================================================
+Ex  1: q1=1 q2=0 v(q1)=8 v(q2)=14 -> sum=22 (exp 22), r1=8 (exp 8), r2=14 (exp 14) PASS
+Ex  2: q1=1 q2=0 v(q1)=20 v(q2)=14 -> sum=11 (exp 11), r1=20 (exp 20), r2=14 (exp 14) PASS
+Ex  3: q1=1 q2=2 v(q1)=0 v(q2)=22 -> sum=22 (exp 22), r1=0 (exp 0), r2=22 (exp 22) PASS
+Ex  4: q1=0 q2=1 v(q1)=1 v(q2)=13 -> sum=14 (exp 14), r1=1 (exp 1), r2=13 (exp 13) PASS
+Ex  5: q1=1 q2=2 v(q1)=19 v(q2)=13 -> sum=9 (exp 9), r1=19 (exp 19), r2=13 (exp 13) PASS
+Ex  6: q1=2 q2=1 v(q1)=22 v(q2)=21 -> sum=20 (exp 20), r1=22 (exp 22), r2=21 (exp 21) PASS
+Ex  7: q1=1 q2=0 v(q1)=10 v(q2)=21 -> sum=8 (exp 8), r1=10 (exp 10), r2=21 (exp 21) PASS
+Ex  8: q1=1 q2=2 v(q1)=18 v(q2)=0 -> sum=18 (exp 18), r1=18 (exp 18), r2=0 (exp 0) PASS
+Ex  9: q1=2 q2=1 v(q1)=9 v(q2)=17 -> sum=3 (exp 3), r1=9 (exp 9), r2=17 (exp 17) PASS
+Ex 10: q1=0 q2=2 v(q1)=10 v(q2)=3 -> sum=13 (exp 13), r1=10 (exp 10), r2=3 (exp 3) PASS
+Ex 11: q1=1 q2=2 v(q1)=17 v(q2)=1 -> sum=18 (exp 18), r1=17 (exp 17), r2=1 (exp 1) PASS
+Ex 12: q1=0 q2=2 v(q1)=22 v(q2)=18 -> sum=17 (exp 17), r1=22 (exp 22), r2=18 (exp 18) PASS
+Ex 13: q1=2 q2=0 v(q1)=19 v(q2)=18 -> sum=14 (exp 14), r1=19 (exp 19), r2=18 (exp 18) PASS
+Ex 14: q1=2 q2=1 v(q1)=0 v(q2)=10 -> sum=10 (exp 10), r1=0 (exp 0), r2=10 (exp 10) PASS
+Ex 15: q1=0 q2=2 v(q1)=16 v(q2)=3 -> sum=19 (exp 19), r1=16 (exp 16), r2=3 (exp 3) PASS
+Ex 16: q1=1 q2=0 v(q1)=4 v(q2)=10 -> sum=14 (exp 14), r1=4 (exp 4), r2=10 (exp 10) PASS
+Ex 17: q1=2 q2=1 v(q1)=9 v(q2)=21 -> sum=7 (exp 7), r1=9 (exp 9), r2=21 (exp 21) PASS
+Ex 18: q1=1 q2=0 v(q1)=6 v(q2)=15 -> sum=21 (exp 21), r1=6 (exp 6), r2=15 (exp 15) PASS
+Ex 19: q1=2 q2=0 v(q1)=9 v(q2)=13 -> sum=22 (exp 22), r1=9 (exp 9), r2=13 (exp 13) PASS
+Ex 20: q1=0 q2=2 v(q1)=22 v(q2)=9 -> sum=8 (exp 8), r1=22 (exp 22), r2=9 (exp 9) PASS
+============================================================
+VERDICT: ALL 20 PASSED
+============================================================

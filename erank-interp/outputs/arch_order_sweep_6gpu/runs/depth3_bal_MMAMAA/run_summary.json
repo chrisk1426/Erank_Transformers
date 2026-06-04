@@ -1,0 +1,17 @@
+{
+  "run_id": "depth3_bal_MMAMAA",
+  "schedule": "MMAMAA",
+  "depth": 3,
+  "n_blocks": 6,
+  "n_params": 622720,
+  "best_val_acc": 0.04699738903394256,
+  "best_val_epoch": 46325,
+  "test_acc_at_best_val": 0.03356080098445016,
+  "test_loss_at_best_val": 12.204113497052873,
+  "final_train_acc": 0.9993472584856397,
+  "final_val_acc": 0.02741514360313316,
+  "final_epoch": 50000,
+  "grokking_tau": null,
+  "status": "MEMORIZED_ONLY",
+  "elapsed_seconds": 12546.24654006958
+}

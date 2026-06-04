@@ -1,0 +1,5 @@
+model,candidate,match_rate
+hybrid_p23_m3_aux_retrieval_4layer_seed0,s01,0.36857964662375015
+hybrid_p23_m3_aux_retrieval_4layer_seed0,s02,0.362279139843857
+hybrid_p23_m3_aux_retrieval_4layer_seed0,s12,0.3594028215312971
+hybrid_p23_m3_aux_retrieval_4layer_seed0,correct_sum,1.0

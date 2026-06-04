@@ -1,0 +1,10 @@
+model,query_pair,n_examples,accuracy
+hybrid_small_p23_m3_standard_2layer_seed0,01,2484,0.3148148148148148
+hybrid_small_p23_m3_standard_2layer_seed0,02,2420,0.3285123966942149
+hybrid_small_p23_m3_standard_2layer_seed0,12,2397,0.31748018356278684
+hybrid_small_p23_m3_standard_3layer_seed0,01,2484,0.3325281803542673
+hybrid_small_p23_m3_standard_3layer_seed0,02,2420,0.31239669421487604
+hybrid_small_p23_m3_standard_3layer_seed0,12,2397,0.3354192740926158
+hybrid_small_p23_m3_standard_4layer_seed0,01,2484,0.3272946859903382
+hybrid_small_p23_m3_standard_4layer_seed0,02,2420,0.3450413223140496
+hybrid_small_p23_m3_standard_4layer_seed0,12,2397,0.33708802670004173

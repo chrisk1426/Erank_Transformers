@@ -1,0 +1,17 @@
+{
+  "run_id": "depth4_bal_MMAMAAAM",
+  "schedule": "MMAMAAAM",
+  "depth": 4,
+  "n_blocks": 8,
+  "n_params": 820480,
+  "best_val_acc": 1.0,
+  "best_val_epoch": 3250,
+  "test_acc_at_best_val": 0.9996643919901554,
+  "test_loss_at_best_val": 0.008956305935446706,
+  "final_train_acc": 1.0,
+  "final_val_acc": 0.9986945169712794,
+  "final_epoch": 50000,
+  "grokking_tau": 2375,
+  "status": "GROKKED",
+  "elapsed_seconds": 14397.110604524612
+}

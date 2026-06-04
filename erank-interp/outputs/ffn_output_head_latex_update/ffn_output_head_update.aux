@@ -1,0 +1,41 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Executive Summary}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Motivation}{1}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Readout bottleneck.}{1}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Representation / retrieval bottleneck.}{2}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Experimental Setup}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Task.}{2}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Dataset.}{2}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Architectures.}{2}{section*.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces All runs are $p=23, m=3$, 4-layer, seed 0, AdamW lr $3\!\times \!10^{-4}$, batch 256.}}{2}{table.caption.7}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:setup}{{1}{2}{All runs are $p=23, m=3$, 4-layer, seed 0, AdamW lr $3\!\times \!10^{-4}$, batch 256}{table.caption.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Configurations compared.}{2}{table.caption.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{2}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Accuracy comparison}{2}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Hybrid $p=23, m=3$ accuracy by output head and supervision (seed 0).}}{2}{table.caption.8}\protected@file@percent }
+\newlabel{tab:accuracy}{{2}{2}{Hybrid $p=23, m=3$ accuracy by output head and supervision (seed 0)}{table.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Best validation and test-at-best-val accuracy for the comparable 4-layer hybrid runs and their shallower linear-head baselines. The red dotted line marks chance ($1/23 \approx 0.0435$); the purple dashed line marks the fixed-pair shortcut baseline ($\approx 0.362$). The FFN-head sits at the shortcut plateau; auxiliary retrieval supervision rescues the task entirely.}}{3}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:bar}{{1}{3}{Best validation and test-at-best-val accuracy for the comparable 4-layer hybrid runs and their shallower linear-head baselines. The red dotted line marks chance ($1/23 \approx 0.0435$); the purple dashed line marks the fixed-pair shortcut baseline ($\approx 0.362$). The FFN-head sits at the shortcut plateau; auxiliary retrieval supervision rescues the task entirely}{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Improvement over the matched linear-head baseline}{3}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Training curves}{3}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Train/validation gap}{3}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Probe Diagnostics}{3}{section.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Frozen probe test accuracy on the EQ-position residual.}}{3}{table.caption.12}\protected@file@percent }
+\newlabel{tab:probes}{{3}{3}{Frozen probe test accuracy on the EQ-position residual}{table.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Training and validation curves for three 4-layer configurations. The linear-head baseline and FFN-head run both plateau near the fixed-pair shortcut. The auxiliary-retrieval rescue groks within $\sim 200$ epochs.}}{4}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:curves}{{2}{4}{Training and validation curves for three 4-layer configurations. The linear-head baseline and FFN-head run both plateau near the fixed-pair shortcut. The auxiliary-retrieval rescue groks within $\sim 200$ epochs}{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {paragraph}{Interpretation.}{4}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}eRank Diagnostics}{4}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Interpretation}{4}{section.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Final-epoch $\mathrm  {train\_acc} - \mathrm  {val\_acc}$. All non-aux runs show small positive gaps (no severe overfitting); the gap on the FFN-head run is comparable to the linear-head baseline. The aux-retrieval run has zero gap (both at 1.000).}}{5}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:gap}{{3}{5}{Final-epoch $\mathrm {train\_acc} - \mathrm {val\_acc}$. All non-aux runs show small positive gaps (no severe overfitting); the gap on the FFN-head run is comparable to the linear-head baseline. The aux-retrieval run has zero gap (both at 1.000)}{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Frozen-probe diagnostics on the EQ residual stream of the linear-head models. Probe accuracy is at the fixed-pair plateau for every target; the MLP probe does not outperform the linear probe.}}{5}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:probes}{{4}{5}{Frozen-probe diagnostics on the EQ residual stream of the linear-head models. Probe accuracy is at the fixed-pair plateau for every target; the MLP probe does not outperform the linear probe}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {paragraph}{Interpretation category:}{5}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Caveats}{5}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Next Steps}{6}{section.9}\protected@file@percent }
+\gdef \@abspage@last{6}

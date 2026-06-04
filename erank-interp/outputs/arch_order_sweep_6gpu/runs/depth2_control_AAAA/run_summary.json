@@ -1,0 +1,17 @@
+{
+  "run_id": "depth2_control_AAAA",
+  "schedule": "AAAA",
+  "depth": 2,
+  "n_blocks": 4,
+  "n_params": 293632,
+  "best_val_acc": 0.010443864229765013,
+  "best_val_epoch": 19475,
+  "test_acc_at_best_val": 0.0038035574449043516,
+  "test_loss_at_best_val": 15.855217061723982,
+  "final_train_acc": 1.0,
+  "final_val_acc": 0.0013054830287206266,
+  "final_epoch": 50000,
+  "grokking_tau": null,
+  "status": "MEMORIZED_ONLY",
+  "elapsed_seconds": 11922.082568883896
+}

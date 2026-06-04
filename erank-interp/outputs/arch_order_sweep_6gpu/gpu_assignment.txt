@@ -1,0 +1,6 @@
+launch_time=2026-05-10T19:11:43-04:00
+physical_gpu_ids=0,1,2,3,4,5,6,7
+num_workers=8
+max_epochs=50000
+manifest=outputs/arch_order_sweep_6gpu/schedule_manifest.csv
+CUDA_VISIBLE_DEVICES_at_launch=<unset>

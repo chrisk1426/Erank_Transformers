@@ -1,0 +1,2 @@
+run_id,depth,schedule,seed,checkpoint_label,epoch,train_acc,val_acc,final_rep_erank,rank_nonzero,top1_mass,top5_mass,top10_mass,top20_mass,singular_values_path
+depth4_bal_AAMAMAMM,4,AAMAMAMM,0,best_val,2375,1.0,1.0,14.73093919771743,128,0.2815137755454316,0.627007412051226,0.7689165810101043,0.9332992600373486,/jumbo/lisp/f006j44/erank/erank-interp/outputs/arch_order_sweep_6gpu/spectra/depth4_bal_AAMAMAMM_best_val_singular_values.npy

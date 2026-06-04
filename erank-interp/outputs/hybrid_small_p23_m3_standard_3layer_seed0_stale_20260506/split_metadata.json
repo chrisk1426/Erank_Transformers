@@ -1,0 +1,16 @@
+{
+  "task": "hybrid_retrieve_add_small_exhaustive",
+  "p": 23,
+  "num_kv_pairs": 3,
+  "n_total": 73002,
+  "n_train": 58401,
+  "n_val": 7300,
+  "n_test": 7301,
+  "train_frac": 0.8,
+  "val_frac": 0.1,
+  "seed": 0,
+  "exhaustive": true,
+  "q1_neq_q2_enforced": true,
+  "kv_order_randomised": true,
+  "bindings_context_specific": true
+}

@@ -1,0 +1,697 @@
+\documentclass{article}
+
+% NeurIPS 2024 style. If the file `neurips_2024.sty` is not on your TEXMF path,
+% download it from https://neurips.cc/Conferences/2024/PaperInformation/StyleFiles
+% and drop it next to this .tex file. Use `\usepackage[final]{neurips_2024}` for
+% the camera-ready version (no line numbers, full author block).
+\usepackage[preprint]{neurips_2024}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{array}
+
+% Figures live under ./ relative to this .tex file.
+% Compile this from `outputs/`: pdflatex neurips_thesis.tex
+\graphicspath{{./}{advisor_core_figures/}{modadd_grokking_geometry/plots/}%
+{modadd_arch_matrix_7gpu/plots/}{causal_ablation_core/plots/}%
+{graded_ablation_core/plots/}{hybrid_query_diagnostics/plots/}%
+{hybrid_probe_diagnostics/plots/}%
+{hybrid_p23_m3_aux_retrieval_4layer_seed0/query_diagnostics_after_training/plots/}}
+
+\title{Decomposing the Residual Stream:\\
+Effective-Rank Attribution, Layer Specialization, and\\
+Block-Order Constraints in Grokking Small Transformers}
+
+\author{%
+  \textit{(Christopher Kang)}\\
+  Thayer School of Engineering, Dartmouth College\\
+  \texttt{(christopher.kang.26@dartmouth.edu)}\\
+  \\
+  Senior Honors Thesis --- May 2026\\
+  Advisor: \textit{(Peter Chin)}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We study the geometry of computation in two- and four-layer transformers trained on three controlled tasks: modular addition ($y=(a+b)\bmod 113$), key--value retrieval, and a compositional retrieve-then-add task ($y=(v(q_1)+v(q_2))\bmod p$). Our primary instrument is the \textbf{residual-stream effective rank} (eRank; Roy and Vetterli, 2007), decomposed at every layer into an attention contribution $\Delta_{\text{attn}}$ and an MLP contribution $\Delta_{\text{mlp}}$. We make four contributions. \textbf{(i)} We replicate, with three-seed reliability, the canonical pattern that key--value retrieval is solved by both standard and attention-only transformers while modular addition requires MLP layers (3/3 vs 0/3). \textbf{(ii)} We give a per-component attribution of grokking-time geometric compression: across all three seeds, layer-0 MLP is compressive (mean $\Delta_{\text{mlp}}=-0.45\pm0.47$) while layer-1 MLP is expansive ($+4.49\pm3.98$). Causal full ablation and graded dose--response curves both confirm that this geometric asymmetry corresponds to functional necessity. \textbf{(iii)} Using a custom block-schedule transformer, we run a 7-schedule pilot ablation of attention/MLP block ordering on modular addition and find a \emph{route-before-process} asymmetry: schedules \texttt{AMAMAMAM}, \texttt{AMMM}, and \texttt{AAMM} grok, while \texttt{MMAA}, \texttt{MMMA}, \texttt{AAAA}, and \texttt{MMMM} fail. \textbf{(iv)} On the compositional retrieve-then-add task, we show that vanilla 2- and 4-layer transformers learn a fixed-pair shortcut (counterfactual accuracy $\le$ 0.36, frozen-probe $r_1/r_2$ accuracies $\le$ 0.35), and that an auxiliary retrieval-supervised model achieves perfect query-conditioned sum accuracy ($1.000$) --- yet retrieval probes still saturate near $0.50$, suggesting that the rescued model computes the sum without exposing decodable per-value retrievals. We interpret these results as evidence that effective rank is an informative \emph{geometric} lens, but not, on its own, sufficient to identify learned task-relevant computation; pairing eRank with ablation, dose--response, and clustering measures yields a more complete picture.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Small transformers trained on algorithmic tasks have become a key model organism for mechanistic interpretability. The canonical example is \textbf{grokking}: networks trained on modular arithmetic with weight decay first memorize the training set and then, after a long plateau, generalize abruptly to held-out inputs \citep{power2022grokking}. Subsequent work has established that the resulting circuits compute discrete Fourier transforms over the input space \citep{nanda2023progress}, that grokking coincides with rank minimization in the weights \citep{liu2023grokkingrank,lyu2023dichotomy}, and that the residual-stream representation undergoes a measurable spectral-entropy collapse before generalization \citep{anonymous2026spectral,chen2025complexity}.
+
+Despite this progress, several questions remain underdeveloped. First, the spectral-entropy and rank-minimization literature has measured \emph{global} properties of weights or representations; how each \emph{component} (attention vs MLP, layer 0 vs layer 1) contributes to the geometric collapse, and whether the per-component pattern is task-dependent, is largely uncharacterized. Second, while the necessity of MLPs for modular arithmetic has been folklore-claimed, multi-seed evidence and matched architectural ablations are sparse. Third, beyond the well-studied algorithmic tasks, the geometry of \emph{failure} in compositional tasks (retrieve-then-add) is rarely examined, even though failure modes are diagnostic.
+
+This thesis treats the residual-stream effective rank, decomposed per-layer and per-component, as a unifying instrument and asks four questions:
+\begin{enumerate}
+    \item \textbf{Replication and reliability.} Does the standard-vs-attention-only contrast on modular addition vs key--value retrieval hold across multiple seeds? What does the variance look like?
+    \item \textbf{Per-component attribution.} Where, across layers, is the eRank movement that defines grokking concentrated? Is the role of MLPs uniform across layers, or does it differentiate?
+    \item \textbf{Architectural order.} Does the order of attention and MLP blocks (route-then-process vs process-then-route) determine whether modular addition can be grokked?
+    \item \textbf{Compositional binding.} When a 2- or 4-layer transformer fails on retrieve-then-add, is the bottleneck retrieval, processing, or readout? Can targeted auxiliary supervision rescue it, and what does the rescued representation look like?
+\end{enumerate}
+
+The headline empirical results are summarized in Figure~\ref{fig:headline}. We close with a methodological caution: every experiment confirms that \textbf{eRank is a useful but not a causal measure}. Failed models in particular often produce extremely large $\Sigma\Delta_{\text{attn}}$ values from unstructured weight activity. Pairing eRank with ablation and clustering signatures is essential for honest interpretation.
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{core_accuracy_summary.png}
+        \caption{Test accuracy by (task, architecture), 3 seeds; chance $=1/p$.}
+        \label{fig:headline-acc}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{core_erank_totals.png}
+        \caption{$\Sigma\Delta_{\text{attn}}$ vs $\Sigma\Delta_{\text{mlp}}$ for the same conditions. Failed runs (attention-only modular addition, hybrid) show large but uninterpretable $\Sigma\Delta_{\text{attn}}$ from near-init checkpoints.}
+        \label{fig:headline-erank}
+    \end{subfigure}
+    \caption{Headline results: key--value is solved by both architectures and is attention-dominated; modular addition is solved by standard but not attention-only and shows positive late-layer $\Delta_{\text{mlp}}$; the hybrid task fails uniformly.}
+    \label{fig:headline}
+\end{figure}
+
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Grokking and the geometry of generalization}
+
+Grokking was introduced by \citet{power2022grokking}, who showed that two-layer transformers trained on modular arithmetic exhibit delayed generalization long after fitting the training set. \citet{nanda2023progress} reverse-engineered this circuit and showed it implements discrete Fourier multiplication, with key-frequency embeddings and degree-2 polynomial heads. Their \emph{progress measures} --- restricted loss and excluded loss --- were the first metrics to show continuous improvement \emph{before} the val-loss flip.
+
+Several lines of work since then have linked grokking to rank-related phenomena. \citet{liu2023grokkingrank} and \citet{lyu2023dichotomy} proved that grokking coincides with weight-rank minimization under weight decay. \citet{gromov2023grokking} reverse-engineered modular arithmetic in MLPs and found low-rank generalizing solutions. Most directly relevant to this thesis, two recent works examine the \emph{representation} spectrum:
+
+\begin{itemize}
+\item \citet{chen2025complexity} introduce a rate-distortion / Kolmogorov-complexity framework and show complexity rises during memorization then falls during grokking, achieving 30--40$\times$ compression over naïve baselines on weight matrices.
+\item \citet{anonymous2026spectral} identify normalized spectral entropy of the \emph{representation} covariance as a scalar order parameter for grokking on 1-layer transformers over abelian and non-abelian groups, finding entropy collapses $\sim 1{,}020$ steps before generalization in 100\% of runs and demonstrating causal interventions that delay grokking by preventing the collapse.
+\end{itemize}
+
+Both of these works measure quantities mathematically equivalent to effective rank applied at a single point. Our contribution is complementary: we decompose the rank movement into per-component contributions $\Delta_{\text{attn}}(\ell)$ and $\Delta_{\text{mlp}}(\ell)$ at every layer, in 2- and 4-layer transformers, and use this to identify a layer-0 vs layer-1 MLP role differentiation (Section~\ref{sec:erank-attribution}) that the global metrics cannot resolve.
+
+\subsection{Mechanistic interpretability and the residual stream}
+
+The framework for understanding transformers as rewriting a residual stream comes from \citet{elhage2021framework}. Subsequent work has documented MLPs as key-value memories \citep{geva2021kv}, the role of induction heads in in-context learning \citep{olsson2022induction}, and privileged bases in the residual stream \citep{elhage2023privileged}. Our use of TransformerLens hooks \citep{nanda2022transformerlens} at \texttt{resid\_pre}, \texttt{resid\_mid}, \texttt{resid\_post} to compute $\Delta_{\text{attn}}$ and $\Delta_{\text{mlp}}$ is directly enabled by this infrastructure.
+
+The effective-rank metric itself is from \citet{roy2007effective}. Recent applications include \citet{yunis2024spectral} on the spectral dynamics of weight matrices. To our knowledge, eRank has not previously been applied per-layer to the residual stream as a tool for attributing computation in algorithmic tasks.
+
+\subsection{Block-order ablations and architectural variants}
+
+Several lines of work have asked whether attention is necessary at all. \citet{liu2021gmlp} propose gMLP as an attention-free alternative. \citet{lin2024mlp} replace specific attention layers with MLPs in vision transformers and observe that the model can compensate. Parallel-block transformers (GPT-J, PaLM) compute attention and MLP in parallel rather than sequentially, suggesting block ordering is at least partially flexible at scale.
+
+In the algorithmic-task / interpretability setting, however, we are not aware of prior work that systematically varies attention/MLP block schedules (\texttt{AAAA}, \texttt{MMMM}, \texttt{AMMM}, \texttt{AMAMAMAM}, etc.) on a single grokking task. Layer-specialization studies \citep{liu2025layer,geva2021kv} have shown that depth allocates roles, but not that the \emph{order} of blocks is necessary. Section~\ref{sec:arch-order} investigates this directly.
+
+\subsection{Compositional retrieval and auxiliary supervision}
+
+Compositional and multi-hop reasoning failures in transformers are extensively documented. \citet{dziri2023faith} show that transformers struggle on novel compositional inputs and identify a ``compositional gap.'' \citet{wang2025twohop} and \citet{yang2024latent} describe the \emph{two-hop curse}: small transformers and even pretrained LMs frequently fail at composing two facts in latent space without chain-of-thought. \citet{wu2025binding} examine variable binding in symbolic programs and find that transformers build binding mechanisms on top of line-specific heuristics --- a finding analogous to our fixed-pair shortcut diagnosis (Section~\ref{sec:hybrid}).
+
+The use of auxiliary objectives to induce compositional generalization has prior history. \citet{jiang2021auxiliary} propose auxiliary sequence-prediction tasks to track function and argument semantics. Our auxiliary retrieval rescue (Section~\ref{sec:hybrid}) follows this template --- supervising the per-position retrievals $r_1=v(q_1)$ and $r_2=v(q_2)$ in addition to the sum target --- but reveals a surprising mismatch between training success and probe-decodability.
+
+\subsection{Position relative to prior art}
+
+Concretely, this thesis sits in the niche described in Table~\ref{tab:position}.
+
+\begin{table}[h]
+    \centering
+    \caption{Position of this thesis relative to existing literature.}
+    \label{tab:position}
+    \small
+    \begin{tabular}{p{0.27\linewidth}p{0.32\linewidth}p{0.32\linewidth}}
+        \toprule
+        Dimension & Prior art & This thesis \\
+        \midrule
+        eRank / spectral entropy as grokking signature & global metric on 1-layer transformers, weights, or representations & per-component $\Delta_{\text{attn}}, \Delta_{\text{mlp}}$ at each layer; 2- and 4-layer models \\
+        \addlinespace
+        MLP vs attention necessity & folklore, single-seed & 3-seed standard-vs-attention-only contrast; full and graded ablation \\
+        \addlinespace
+        Block ordering & parallel blocks at scale; gMLP attention-free & systematic schedule sweep on grokking modular addition \\
+        \addlinespace
+        Compositional retrieve-then-add & two-hop and binding studies on natural-language tasks & controlled $(p,m)$ parameterization with shortcut diagnostics, frozen probes, and auxiliary rescue \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The eRank-as-grokking-signature claim is, after \citet{anonymous2026spectral}, a \emph{replication} rather than a discovery; we make this explicit and emphasize the per-component decomposition as our primary methodological contribution.
+
+\section{Preliminaries}
+\label{sec:prelim}
+
+\subsection{Tasks}
+
+\textbf{Modular addition.} Inputs are pairs $(a,b)\in\mathbb{Z}_p\times\mathbb{Z}_p$, target $c=(a+b)\bmod p$. We use $p=113$ throughout the main experiments \citep{nanda2023progress}. Train fraction is 0.30 of all $113^2=12{,}769$ pairs, with a 20\% held-out split off train for validation; test set is the remaining 70\% of all pairs (8,939 examples). Sequence length $n_{\text{ctx}}=3$ with a fixed \texttt{=} token at the answer position.
+
+\textbf{Key--value retrieval.} A context of $m=5$ distinct (key, value) pairs followed by a query key. The model must emit the value bound to the queried key. Vocabulary size 30 for values, 5 keys. Train fraction 0.70.
+
+\textbf{Compositional retrieve-then-add (hybrid).} Inputs are $m$ kv-pairs, a \texttt{QUERY} token, two query keys $q_1\neq q_2$, and an \texttt{=} token. Target $y=(v(q_1)+v(q_2))\bmod p$. Two parameter regimes are studied: $(p=113, m=4)$ for the main thesis-additions experiment, and $(p=23, m=3)$ for the smaller diagnostic experiments. Chance $=1/p$ ($\approx 0.00885$ at $p=113$; $\approx 0.0435$ at $p=23$).
+
+For $(p=23, m=3)$ there are exactly three unordered query-pair sums $\{s_{01}, s_{02}, s_{12}\}$, and an ``always-predict-$s_{ij}$'' baseline reaches $0.359$--$0.369$ --- a key fact that motivates the shortcut diagnostics in Section~\ref{sec:hybrid}.
+
+\subsection{Architectures}
+
+Two base architectures, both 2-layer with $d_{\text{model}}=128$, $n_{\text{heads}}=4$, $d_{\text{head}}=32$, $d_{\text{mlp}}=512$, GELU activation, no LayerNorm, learned positional embeddings, causal mask.
+
+\textbf{Standard:} TransformerLens HookedTransformer with full attention + MLP per layer.
+
+\textbf{Attention-only:} Same configuration with \texttt{attn\_only=True}; the MLP sublayer is absent and \texttt{hook\_resid\_post = hook\_resid\_mid} exactly.
+
+For Section~\ref{sec:arch-order} we additionally introduce a 4-layer \texttt{BlockScheduleTransformer} that mirrors the above hyperparameters but accepts a per-layer schedule string over the alphabet \{A (attention only), M (MLP only), AM (standard block)\}. This allows us to instantiate \texttt{AMAMAMAM}, \texttt{AAAA}, \texttt{MMMM}, \texttt{AMMM}, \texttt{MMMA}, \texttt{AAMM}, \texttt{MMAA}. The hooks \texttt{resid\_pre}, \texttt{resid\_mid}, \texttt{resid\_post} are exposed in all variants.
+
+\subsection{Effective rank}
+
+For an activation matrix $Z\in\mathbb{R}^{n\times d}$ with singular values $\sigma_1\ge\sigma_2\ge\dots\ge\sigma_d$, define the normalized singular distribution $\bar{\sigma}_i=\sigma_i/\sum_j\sigma_j$ and the effective rank \citep{roy2007effective}:
+\begin{equation}
+    \mathrm{eRank}(Z) = \exp\Bigl(-\sum_i \bar{\sigma}_i\log\bar{\sigma}_i\Bigr) = \exp(H(\bar{\sigma})).
+    \label{eq:erank}
+\end{equation}
+Effective rank is a smooth, scale-invariant proxy for ``how many directions of the representation are meaningfully populated.'' It equals 1 for any rank-1 matrix and equals $d$ for an isotropic matrix. We extract $Z$ at the \textbf{answer-token position only} and use $n=500$ test examples unless otherwise stated.
+
+\subsection{Per-component decomposition}
+
+At layer $\ell$, the residual stream is rewritten by attention and then by MLP:
+\[ R_{\text{pre}}^{(\ell)} \xrightarrow{\text{Attn}_\ell} R_{\text{mid}}^{(\ell)} \xrightarrow{\text{MLP}_\ell} R_{\text{post}}^{(\ell)} = R_{\text{pre}}^{(\ell+1)}. \]
+We define
+\begin{equation}
+    \Delta_{\text{attn}}^{(\ell)} = \mathrm{eRank}(R_{\text{mid}}^{(\ell)}) - \mathrm{eRank}(R_{\text{pre}}^{(\ell)}), \quad
+    \Delta_{\text{mlp}}^{(\ell)} = \mathrm{eRank}(R_{\text{post}}^{(\ell)}) - \mathrm{eRank}(R_{\text{mid}}^{(\ell)}).
+    \label{eq:deltas}
+\end{equation}
+For attention-only models, $\Delta_{\text{mlp}}^{(\ell)}\equiv 0$ by construction. Sanity-check experiments verify these identities to numerical precision.
+
+\subsection{Training and selection}
+
+Optimizer AdamW, learning rate $3\times 10^{-4}$, weight decay $1.0$, batch size $256$. Modular addition is trained for up to $50{,}000$ epochs; key--value early-stops when val\_acc $\ge 0.98$ holds for $500$ consecutive epochs. Hybrid training caps at $50{,}000$ epochs (standard) or $15{,}000$ (attention-only). Checkpoints are selected by \textbf{best validation accuracy}; test accuracy is reported at the best-val epoch but never used for selection.
+
+We use seeds 0, 1, 2 throughout the main experiments. Section~\ref{sec:arch-order}'s architecture-order matrix is single-seed (seed 0).
+
+\section{Methods Summary}
+\label{sec:methods}
+
+The pipeline is: (1) train standard and attention-only transformers on each task, 3 seeds each; (2) extract residual-stream activations at the answer-token position via TransformerLens \texttt{run\_with\_cache} filtered to \texttt{resid\_*}; (3) compute per-(layer, hook) eRank on a fixed test split ($n=500$); (4) attribute rank movement to attention and MLP via $\Delta_{\text{attn}}, \Delta_{\text{mlp}}$; (5) validate by causal full ablation (zero out a single component at inference) and graded ablation (scale a component's output by $(1-r)$ for $r\in\{0,0.05,0.10,0.25,0.50,0.75,0.90,1.00\}$); (6) trace training-time eRank trajectory using dense periodic checkpoints for one seed of standard modular addition; (7) diagnose hybrid models with query-counterfactual tests, frozen linear and MLP probes (hidden 256) on $r_1$, $r_2$, and sum targets.
+
+All code, configs, checkpoints, and CSVs are released under \texttt{outputs/} of the project repository.
+
+\section{Experiments}
+\label{sec:exp}
+
+\subsection{Seed-robust replication of the core MLP-vs-attention contrast}
+\label{sec:replication}
+
+We train all 18 runs (3 seeds $\times$ 2 architectures $\times$ 3 tasks) under matched hyperparameters. Table~\ref{tab:core-acc} gives aggregated test accuracies.
+
+\begin{table}[h]
+    \centering
+    \caption{Test accuracy aggregated by (task, architecture) over 3 seeds. Solved threshold is test\_acc $\ge 0.98$.}
+    \label{tab:core-acc}
+    \small
+    \begin{tabular}{llrrr}
+        \toprule
+        Task & Architecture & Mean test acc & Std & Seeds solved \\
+        \midrule
+        key\_value & standard & 1.0000 & 0.0000 & 3/3 \\
+        key\_value & attention\_only & 1.0000 & 0.0000 & 3/3 \\
+        modular\_addition & standard & 0.99996 & 0.00006 & 3/3 \\
+        modular\_addition & attention\_only & 0.00653 & 0.00189 & 0/3 \\
+        hybrid (p=113, m=4) & standard & 0.00961 & 0.00035 & 0/3 \\
+        hybrid (p=113, m=4) & attention\_only & 0.00867 & 0.00164 & 0/3 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The attention-only architecture solves key--value perfectly (3/3) but cannot solve modular addition at all (test acc 0.005--0.009 vs chance 0.00885). The variance is essentially zero in both directions. The compositional hybrid task at $p=113$ fails uniformly across both architectures and all 6 seeds --- a result we revisit in Section~\ref{sec:hybrid}.
+
+The attention-only modular-addition runs deserve a methodological caveat: their best-validation checkpoints occur at epochs $1$, $4$, and $10{,}896$ (with val\_acc $\le 0.013$) --- i.e., the ``best'' validation accuracy is essentially random. Their endpoint eRank values ($\Sigma\Delta_{\text{attn}}\approx 70$) reflect uncalibrated activity at near-init weights, not learned representations. We return to this in Section~\ref{sec:discussion}.
+
+\subsection{Endpoint eRank and per-layer MLP role differentiation}
+\label{sec:erank-attribution}
+
+\begin{table}[h]
+    \centering
+    \caption{Per-layer endpoint eRank decomposition at the best-val checkpoint, mean $\pm$ std over 3 seeds.}
+    \label{tab:erank-attribution}
+    \footnotesize
+    \begin{tabular}{llrrrrrr}
+        \toprule
+        Task & Architecture & L0 $\Delta_{\text{attn}}$ & L0 $\Delta_{\text{mlp}}$ & L1 $\Delta_{\text{attn}}$ & L1 $\Delta_{\text{mlp}}$ & $\Sigma\Delta_{\text{attn}}$ & $\Sigma\Delta_{\text{mlp}}$ \\
+        \midrule
+        key\_value & standard & $0.55\pm0.10$ & $-0.62\pm0.05$ & $5.91\pm0.60$ & $-1.97\pm0.14$ & $6.46\pm0.59$ & $-2.59\pm0.12$ \\
+        key\_value & attn-only & $5.70\pm1.05$ & 0 & $0.67\pm2.02$ & 0 & $6.37\pm0.97$ & 0 \\
+        modadd & standard & $5.23\pm1.73$ & $-0.44\pm0.47$ & $5.44\pm1.33$ & $\mathbf{+4.41\pm3.89}$ & $10.67\pm2.12$ & $3.97\pm3.43$ \\
+        modadd & attn-only & $51.28\pm28.05$ & 0 & $18.91\pm20.16$ & 0 & $70.19\pm8.05$ & 0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{modular_layerwise_erank.png}
+        \caption{Per-layer $\Delta_{\text{attn}}, \Delta_{\text{mlp}}$ for standard modular addition, mean over 3 seeds.}
+        \label{fig:erank-modadd-layer}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{layer0_vs_layer1_mlp_delta.png}
+        \caption{Layer-0 vs layer-1 $\Delta_{\text{mlp}}$. Layer-0 is consistently compressive ($-0.45\pm0.47$); layer-1 is consistently expansive ($+4.49\pm3.98$).}
+        \label{fig:l0-vs-l1-mlp}
+    \end{subfigure}
+    \caption{Layer-0 vs layer-1 MLP role differentiation in standard modular-addition models.}
+    \label{fig:layer-mlp-role}
+\end{figure}
+
+Three interpretive points. \textbf{Key--value is attention-dominated, with MLP slight compression.} Both the standard model's $\Sigma\Delta_{\text{mlp}}\approx -2.6$ (reliably negative, std 0.12) and the attention-only model's near-perfect performance with $\Sigma\Delta_{\text{attn}}\approx 6.4$ confirm that key--value retrieval is solvable by attention alone. \textbf{Modular addition has a per-layer MLP signature.} Layer-0 $\Delta_{\text{mlp}}$ is consistently small and slightly negative across all 3 seeds. Layer-1 $\Delta_{\text{mlp}}$ is consistently large and positive across all 3 seeds (8.84, 2.88, 1.51 per seed). The variance is nontrivial but the \emph{sign} is invariant. \textbf{Failed models have anomalous eRank.} Attention-only modular addition has $\Sigma\Delta_{\text{attn}}\approx 70$ (vs $\sim 10$ for the working standard model). This is not a ``richer'' representation; it is unstructured weight activity at near-init checkpoints.
+
+The layer-0/layer-1 MLP asymmetry is, to our knowledge, a new specific result. We label this \emph{role differentiation}: layer-0 MLP \textbf{denoises/compresses}, layer-1 MLP \textbf{expands toward task-aligned features}.
+
+\subsection{Causal full and graded ablation: validating necessity}
+\label{sec:ablation}
+
+eRank is geometric, not causal. To check whether the per-component pattern corresponds to functional necessity, we run two ablation studies on the standard models.
+
+\paragraph{Full ablation (zero out one component at inference).}
+Table~\ref{tab:full-ablation} gives the mean drop in test accuracy across 3 seeds.
+
+\begin{table}[h]
+    \centering
+    \caption{Test-accuracy drop after zeroing one (layer, component), mean over 3 seeds.}
+    \label{tab:full-ablation}
+    \small
+    \begin{tabular}{lrlrr}
+        \toprule
+        Task & Layer & Component & Mean $\Delta$ test\_acc & Std \\
+        \midrule
+        key\_value & 0 & attn & 0.717 & 0.033 \\
+        key\_value & 0 & mlp & 0.951 & 0.015 \\
+        key\_value & 1 & attn & \textbf{0.966} & 0.002 \\
+        key\_value & 1 & mlp & 0.674 & 0.056 \\
+        modular\_addition & 0 & attn & 0.910 & 0.061 \\
+        modular\_addition & 0 & mlp & 0.920 & 0.039 \\
+        modular\_addition & 1 & attn & \textbf{0.989} & 0.001 \\
+        modular\_addition & 1 & mlp & 0.951 & 0.058 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Layer-1 attention is the most important single component for both tasks. Modular addition is also strongly damaged by layer-1 MLP ablation. Crucially, on key--value the layer-0 MLP ablation is large ($\Delta=0.95$) even though its $\Sigma\Delta_{\text{mlp}}$ is small and negative --- confirming that \textbf{eRank magnitude does not equal causal necessity}.
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{ablation_delta_test_acc.png}
+        \caption{Full ablation: $\Delta$ test accuracy by (layer, component), 3 seeds.}
+        \label{fig:full-ablation}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{combined_dose_response.png}
+        \caption{Graded ablation: dose--response curves for four (task, layer, component) cells.}
+        \label{fig:graded-ablation}
+    \end{subfigure}
+    \caption{Causal validation. Both ablation views identify layer-1 attention as the most fragile component; modular L1 MLP collapses gracefully (consistent with quantitative-not-binary contribution).}
+    \label{fig:ablation}
+\end{figure}
+
+\paragraph{Graded ablation (scale by $(1-r)$).}
+Figure~\ref{fig:graded-ablation} shows mean dose--response curves over seeds. All four components are robust to mild weakening ($r\le 0.25 \Rightarrow$ no degradation). Modular L1 attention is the most fragile under partial weakening (already 0.45 at $r=0.75$); modular L1 MLP collapses gracefully (0.65 at $r=0.75$). Full numerical values:
+
+\begin{table}[h]
+    \centering
+    \caption{Graded ablation: mean test acc at intermediate scales.}
+    \label{tab:graded}
+    \small
+    \begin{tabular}{lrrrrr}
+        \toprule
+        Cell & $r=0$ & $r=0.50$ & $r=0.75$ & $r=0.90$ & $r=1.00$ \\
+        \midrule
+        KV / L1 attn & 1.000 & 0.827 & 0.287 & 0.069 & 0.034 \\
+        KV / L0 mlp & 1.000 & 0.617 & 0.102 & 0.059 & 0.049 \\
+        ModAdd / L1 attn & 1.000 & 0.958 & 0.448 & 0.113 & 0.011 \\
+        ModAdd / L1 mlp & 1.000 & 0.999 & 0.654 & 0.210 & 0.049 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{The grokking trajectory: representational compression in the residual stream}
+\label{sec:trajectory}
+
+Using dense periodic checkpoints at seed 0, we trace eRank, top-$k$ mass, and same-sum clustering through training. Define $\tau$ = first epoch with val\_acc $\ge 0.95$ ($\tau=4506$ in dense training history; the same-sum CSV uses checkpoint epoch 2439 as the first recorded crossover).
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{training_time_erank_accuracy_seedwise.png}
+        \caption{eRank($R_{\text{post}}^{(1)}$) and val\_acc.}
+        \label{fig:traj-erank}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{topk_mass_over_time.png}
+        \caption{Top-$k$ singular mass.}
+        \label{fig:traj-topk}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{same_sum_distance_over_time.png}
+        \caption{Same-sum within/between distance ratio $\rho$.}
+        \label{fig:traj-rho}
+    \end{subfigure}
+    \caption{Three views of the same grokking trajectory (seed 0). eRank rises during memorization then falls 4$\times$ post-grokking; top-$k$ mass concentrates monotonically; the within/between distance ratio drops by 5 orders of magnitude.}
+    \label{fig:trajectory}
+\end{figure}
+
+\begin{table}[h]
+    \centering
+    \caption{Trajectory of layer-1 \texttt{resid\_post} geometry (seed 0). All quantities computed on the full $113^2$ grid.}
+    \label{tab:trajectory}
+    \small
+    \begin{tabular}{rrrrrrr}
+        \toprule
+        Epoch & rel-$\tau$ & val\_acc & eRank & Top-5 mass & Top-10 mass & Same-sum $\rho$ \\
+        \midrule
+        0 & $-2439$ & 0.000 & 71.41 & 0.181 & 0.316 & $1.07\times 10^5$ \\
+        122 & $-2317$ & 0.005 & 90.75 & 0.152 & 0.273 & 73.4 \\
+        1000 & $-1439$ & 0.014 & 75.72 & 0.168 & 0.314 & 33.4 \\
+        2000 & $-439$ & 0.233 & 59.38 & 0.207 & 0.359 & 1.87 \\
+        2326 & $-113$ & 0.500 & 45.06 & 0.290 & 0.484 & 0.731 \\
+        2439 & 0 & 0.952 & 34.66 & 0.374 & 0.572 & 0.376 \\
+        2750 & $+311$ & 1.000 & 22.72 & 0.442 & 0.727 & 0.396 \\
+        2974 & $+535$ & 1.000 & 20.71 & 0.466 & 0.744 & 0.326 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Three observations. \textbf{eRank rises during memorization and falls during grokking.} From init (71) eRank rises to $\sim 91$ during the memorization plateau and then decays to $\sim 21$ post-grokking --- a 4$\times$ compression. This rise-then-fall shape replicates \citet{chen2025complexity} and the entropy-collapse signature of \citet{anonymous2026spectral} on a different architecture. \textbf{Top-$k$ mass concentrates monotonically as eRank falls.} Top-5 mass goes 0.18 $\to$ 0.47, top-10 goes 0.32 $\to$ 0.74. \textbf{Same-sum clustering drops by five orders of magnitude.} The within-class to between-class distance ratio $\rho$ goes from $10^5$ at init to $0.33$ post-grokking. This is a \emph{task-aligned} compression.
+
+We do not have dense per-epoch trajectories for seeds 1, 2 --- a known limitation (Section~\ref{sec:discussion}).
+
+\subsection{Block-order ablation: route-before-process}
+\label{sec:arch-order}
+
+We hypothesize that grokking modular arithmetic requires \emph{attention} before \emph{MLP} in some sense. To test this, we train 7 4-layer architectures from scratch using the \texttt{BlockScheduleTransformer}.
+
+\begin{table}[h]
+    \centering
+    \caption{Architecture-order matrix. Single seed (seed 0). All trained on modular addition with identical hyperparameters.}
+    \label{tab:arch-matrix}
+    \footnotesize
+    \begin{tabular}{lrrrrrrrl}
+        \toprule
+        Schedule & Params & best\_val & test@best & $\tau$ & $\Sigma\Delta_{\text{attn}}$ & $\Sigma\Delta_{\text{mlp}}$ & Same-sum $\rho$ & Status \\
+        \midrule
+        \texttt{AMAMAMAM} & 820,480 & 1.0000 & 0.9991 & 3,150 & 8.18 & $+11.08$ & 0.337 & \textbf{SOLVED} \\
+        \texttt{AMMM} & 490,624 & 0.9948 & 0.9758 & 11,200 & 4.92 & $+5.23$ & 0.369 & \textbf{SOLVED} \\
+        \texttt{AAMM} & 424,960 & 0.9948 & 0.9874 & 6,325 & 5.41 & $+3.85$ & \textbf{0.229} & \textbf{SOLVED} \\
+        \texttt{MMAA} & 424,960 & 0.0170 & 0.0055 & --- & 74.07 & $-0.00$ & --- & failed \\
+        \texttt{MMMA} & 490,624 & 0.0157 & 0.0097 & --- & 38.23 & 0.00 & --- & failed \\
+        \texttt{AAAA} & 293,632 & 0.0104 & 0.0038 & --- & 70.02 & 0.00 & --- & failed \\
+        \texttt{MMMM} & 556,288 & 0.0104 & 0.0083 & --- & 0.00 & $-0.00$ & --- & failed \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{architecture_test_accuracy.png}
+        \caption{Test accuracy.}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{architecture_endpoint_erank_totals.png}
+        \caption{$\Sigma\Delta$ totals by schedule.}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{architecture_same_sum_ratio.png}
+        \caption{Same-sum ratio (grokked only).}
+    \end{subfigure}
+    \caption{Architecture-order matrix on modular addition. Route-before-process schedules grok and show low eRank with structured top-$k$ mass; process-before-route schedules fail with anomalously large attention-driven eRank.}
+    \label{fig:arch-matrix}
+\end{figure}
+
+Three observations. \textbf{Route-before-process schedules grok; process-before-route schedules fail.} All three solving schedules place at least one attention block before the MLP-heavy region. All four failing schedules either lack attention (\texttt{AAAA}, \texttt{MMMM}) or place attention after the MLP region (\texttt{MMMA}, \texttt{MMAA}). The pattern is independent of total parameters (\texttt{AAMM} solves with 425k while \texttt{MMMM} with 556k fails). \textbf{Solving schedules show eRank compression and same-sum clustering} --- the same regime as the 2-layer modular-addition trajectory in Section~\ref{sec:trajectory}. \textbf{\texttt{AAMM} has the cleanest task-aligned geometry} (lowest same-sum $\rho=0.229$).
+
+\textbf{Caveats.} Single-seed pilot. Schedules are not parameter-matched (294k--820k range). The four failing schedules may fail in part because of capacity rather than ordering. A NeurIPS-quality version of this experiment requires $\ge 3$ seeds per schedule and parameter-matched controls.
+
+\subsection{Compositional retrieve-then-add: shortcuts, frozen probes, and auxiliary rescue}
+\label{sec:hybrid}
+
+The hybrid task $y=(v(q_1)+v(q_2))\bmod p$ combines key--value retrieval with modular addition. We test three architectural depths on a smaller $(p=23, m=3)$ setting, plus a 4-layer rescue with auxiliary supervision.
+
+\paragraph{Baseline runs ($p=23, m=3$, single seed each).}
+All three vanilla runs reach 0.31--0.34 test accuracy --- within the band of the always-predict-$s_{ij}$ baseline (0.359--0.369). Query-counterfactual diagnostics confirm that all three are using a fixed-pair shortcut.
+
+\begin{table}[h]
+    \centering
+    \caption{Hybrid $p=23, m=3$ query-counterfactual diagnostics.}
+    \label{tab:hybrid-counter}
+    \small
+    \begin{tabular}{rlrrl}
+        \toprule
+        Layers & Acc by query (q=01 / 02 / 12) & Counterfact.\ acc & Frac constant & Verdict \\
+        \midrule
+        2 & 0.315 / 0.329 / 0.317 & 0.336 & 0.973 & \textsc{LIKELY\_FIXED\_PAIR\_SHORTCUT} \\
+        3 & 0.333 / 0.312 / 0.335 & 0.351 & 0.979 & \textsc{LIKELY\_FIXED\_PAIR\_SHORTCUT} \\
+        4 & 0.327 / 0.345 / 0.337 & 0.364 & 0.991 & \textsc{LIKELY\_FIXED\_PAIR\_SHORTCUT} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The ``frac constant'' column shows the fraction of contexts in which the model's prediction is identical regardless of which $q$ is queried.
+
+\begin{table}[h]
+    \centering
+    \caption{Frozen-probe accuracy on the EQ-position residual stream of failed hybrid baselines.}
+    \label{tab:hybrid-probe}
+    \small
+    \begin{tabular}{rrrrrrr}
+        \toprule
+        Layers & Linear sum & MLP sum & Linear $r_1$ & MLP $r_1$ & Linear $r_2$ & MLP $r_2$ \\
+        \midrule
+        2 & 0.322 & 0.322 & 0.253 & 0.328 & 0.250 & 0.319 \\
+        3 & 0.335 & 0.337 & 0.333 & 0.337 & 0.330 & 0.329 \\
+        4 & 0.338 & 0.336 & 0.340 & 0.347 & 0.348 & 0.348 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Linear and MLP-256 probes on the EQ-position residual stream achieve 0.32--0.35 on $r_1$, $r_2$, and sum targets across all three depths --- i.e., neither retrieval nor sum is decodable. This is a \textbf{retrieval bottleneck}: the residual at the answer position does not contain $v(q_1)$ or $v(q_2)$ in any decodable form.
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{counterfactual_unique_predictions.png}
+        \caption{Counterfactual unique predictions: 97--99\% of contexts produce a constant prediction across the 3 possible queries.}
+        \label{fig:hybrid-counter}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{probe_accuracy_by_target.png}
+        \caption{Frozen probe accuracy by target. All probes plateau at 0.32--0.35; MLP probe $\approx$ linear probe; non-linear capacity does not unlock additional info.}
+        \label{fig:hybrid-probe}
+    \end{subfigure}
+    \caption{Hybrid baseline diagnostics: failure mode is a fixed-pair shortcut and a retrieval bottleneck.}
+    \label{fig:hybrid-diag}
+\end{figure}
+
+\paragraph{Auxiliary retrieval rescue.}
+We train a 4-layer model with two auxiliary linear heads on $r_1=v(q_1)$ and $r_2=v(q_2)$, in addition to the sum head, with a combined cross-entropy loss. The model achieves perfect query-conditioned sum (test acc 1.000, counterfactual acc 1.000, all three query pairs at 1.000) by epoch 182. Endpoint eRank: $\Sigma\Delta_{\text{attn}}=45.5$, $\Sigma\Delta_{\text{mlp}}=16.9$, with layer 2 contributing the largest $\Delta_{\text{mlp}}$ ($+25.3$) and layer 3 actually compressing ($\Delta_{\text{mlp}}=-11.4$).
+
+\paragraph{The puzzle.}
+Despite explicit $r_1, r_2$ supervision, the auxiliary head accuracies stay at $0.51 / 0.51$ on the test set. The model solves the sum perfectly but does not produce decodable per-value retrievals. Two interpretations: (a) retrieval is implicit and distributed; (b) the model learned $(v(q_1)+v(q_2))\bmod p$ directly without ever materializing $v(q_1), v(q_2)$ as separable internal variables. Distinguishing these requires per-layer / per-position probing of the rescued model --- work beyond the scope of this thesis.
+
+\paragraph{FFN-head experiment (confounded).}
+A separate 4-layer $p=23, m=3$ run replaced the linear unembedding with a 2-layer GELU MLP head and used weight decay 0.1 (vs 1.0 elsewhere). Test accuracy improved modestly to 0.379. Because head and weight decay both changed, this gain is not cleanly attributable; we report it as an unresolved confound.
+
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\subsection{What the per-component eRank decomposition does and does not show}
+
+The strongest defensible claim from this thesis is: \textbf{at every successful grokked modular-addition run we observe, layer-0 MLP has small or negative $\Delta_{\text{mlp}}$ while layer-1 MLP has large positive $\Delta_{\text{mlp}}$, and both layers are necessary by ablation.} This is true in 3/3 standard 2-layer seeds (Table~\ref{tab:erank-attribution}), in the 4-layer \texttt{AMAMAMAM} baseline (Table~\ref{tab:arch-matrix}), and consistently across the trajectory toward grokking (Table~\ref{tab:trajectory}).
+
+The corresponding claim \emph{would be wrong} if framed as ``MLPs do nothing in attention-only key--value tasks.'' The standard key--value model also has L0 $\Delta_{\text{mlp}}\approx -0.6$ and L1 $\Delta_{\text{mlp}}\approx -2.0$ --- both negative, both small in magnitude --- \emph{and yet ablating L0 MLP destroys 0.95 of test accuracy} (Table~\ref{tab:full-ablation}). Similarly, the standard key--value model with MLPs is not redundant --- its L1 MLP contributes a measurable compression.
+
+The lesson is that \textbf{eRank attribution captures dimensionality movement, not functional necessity}. A component can be necessary (ablation says yes) without changing rank ($\Delta\approx 0$). The most informative readings come from cases where the two signals agree.
+
+\subsection{Limitations}
+
+\textbf{Single-seed experiments.} The 7-schedule architecture-order matrix (Section~\ref{sec:arch-order}) and the 4-layer auxiliary rescue (Section~\ref{sec:hybrid}) are single-seed pilots. Multi-seed replication is required before any of these results can be presented as robust.
+
+\textbf{Parameter mismatch in the architecture matrix.} Schedules range 294k--820k parameters. We cannot rule out that some failures (especially \texttt{AAAA}, \texttt{MMMM}) reflect capacity rather than block ordering.
+
+\textbf{Dense periodic checkpoints exist for seed 0 only.} The trajectory analysis in Section~\ref{sec:trajectory} is from one seed. Cross-seed claims about the \emph{direction} of change rest on the aggregate data in Table~\ref{tab:erank-attribution}.
+
+\textbf{Custom block-schedule transformer.} Schedule experiments use \texttt{BlockScheduleTransformer} rather than \texttt{HookedTransformer}. Numerical differences relative to \texttt{HookedTransformer} are possible.
+
+\textbf{FFN-head confound.} Section~\ref{sec:hybrid}'s FFN-head experiment changed both head capacity and weight decay simultaneously.
+
+\textbf{eRank is geometric, not causal.} Failed-model eRank is large for unstructured reasons. Throughout we pair eRank with accuracy and ablation evidence to mitigate this.
+
+\textbf{Hybrid auxiliary rescue: $r_1/r_2$ still un-decodable.} The supervised retrievals do not produce decodable representations at the auxiliary head positions, even though sum is perfect.
+
+\textbf{Test set leakage.} None observed. Test accuracy is computed at the best-val epoch but never used for selection.
+
+\subsection{Outlook}
+
+The most natural next step is the architecture-order matrix at 3 seeds per schedule with parameter-matched controls (estimated 1--2 GPU-weeks on RTX 5000s). A second priority is per-layer / per-position probing of the auxiliary-rescue model to localize $v(q_1)$ and $v(q_2)$. A third priority is to extend the dense-checkpoint trajectory analysis to seeds 1 and 2.
+
+Beyond these, a productive long-term direction is to use the per-component eRank decomposition as a \emph{diagnostic} during training of larger transformers --- early indicators of route-vs-process roles may be useful for architecture design or interpretability triage at scale.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We instrumented the residual stream of small transformers with per-layer, per-component effective-rank attribution and used this lens to study three model organisms. Our four contributions are: a 3-seed replication of the standard-vs-attention-only contrast with full eRank decomposition; a layer-0 vs layer-1 MLP role differentiation that is geometric, causal, and dose-graceful; a 7-schedule single-seed pilot suggesting that route-before-process block ordering is necessary for grokking modular addition; and a hybrid-task analysis showing that small transformers fail compositional retrieve-then-add as a retrieval bottleneck, that the failure mode is a fixed-pair shortcut, and that auxiliary supervision rescues sum accuracy without producing decodable retrievals.
+
+The recurring methodological lesson is that effective rank is an informative geometric signal but not a causal measure. The cases where eRank attribution agrees with ablation and clustering evidence are the ones to trust. The cases where eRank is large but accuracy is at chance --- failed attention-only modular addition, all failed hybrid runs, the \texttt{AAAA} and \texttt{MMAA} schedules --- should be read as \emph{negative space} rather than evidence of structure.
+
+\section*{Acknowledgements}
+
+\textit{(Placeholder for advisor, lab, funding, and compute-source acknowledgements.)}
+
+\bibliographystyle{plainnat}
+\begin{thebibliography}{99}
+
+\bibitem[Anonymous(2026)]{anonymous2026spectral}
+Anonymous.
+\newblock Spectral entropy collapse as an empirical signature of delayed generalisation in grokking.
+\newblock \emph{arXiv:2604.13123}, 2026.
+
+\bibitem[Chen et~al.(2025)]{chen2025complexity}
+T. Chen et~al.
+\newblock The complexity dynamics of grokking.
+\newblock \emph{arXiv:2412.09810 / ICLR 2025}, 2025.
+
+\bibitem[Dziri et~al.(2023)]{dziri2023faith}
+N. Dziri, X. Lu, M. Sclar, et~al.
+\newblock Faith and fate: Limits of transformers on compositionality.
+\newblock In \emph{NeurIPS}, 2023.
+
+\bibitem[Elhage et~al.(2021)]{elhage2021framework}
+N. Elhage, N. Nanda, C. Olsson, et~al.
+\newblock A mathematical framework for transformer circuits.
+\newblock \emph{Transformer Circuits Thread}, 2021.
+
+\bibitem[Elhage et~al.(2023)]{elhage2023privileged}
+N. Elhage, R. Lasenby, and C. Olah.
+\newblock Privileged bases in the transformer residual stream.
+\newblock \emph{Transformer Circuits Thread}, 2023.
+
+\bibitem[Geva et~al.(2021)]{geva2021kv}
+M. Geva, R. Schuster, J. Berant, and O. Levy.
+\newblock Transformer feed-forward layers are key-value memories.
+\newblock In \emph{EMNLP}, 2021.
+
+\bibitem[Gromov(2023)]{gromov2023grokking}
+A. Gromov.
+\newblock Grokking modular arithmetic.
+\newblock \emph{arXiv:2301.02679}, 2023.
+
+\bibitem[Jiang and Bansal(2021)]{jiang2021auxiliary}
+Y. Jiang and M. Bansal.
+\newblock Inducing transformer's compositional generalization ability via auxiliary sequence prediction tasks.
+\newblock \emph{arXiv:2109.15256}, 2021.
+
+\bibitem[Lin et~al.(2024)]{lin2024mlp}
+S. Lin, P. Lyu, D. Liu, et~al.
+\newblock MLP can be a good transformer learner.
+\newblock In \emph{CVPR}, 2024.
+
+\bibitem[Liu et~al.(2023)]{liu2023grokkingrank}
+B. Liu, J. Ash, S. Goel, A. Krishnamurthy, and C. Zhang.
+\newblock Grokking, rank minimization and generalization in deep learning.
+\newblock \emph{OpenReview}, 2023.
+
+\bibitem[Liu et~al.(2021)]{liu2021gmlp}
+H. Liu, Z. Dai, D.~R. So, and Q.~V. Le.
+\newblock Pay attention to MLPs.
+\newblock In \emph{NeurIPS}, 2021.
+
+\bibitem[Liu et~al.(2025)]{liu2025layer}
+Z. Liu et~al.
+\newblock Layer specialization underlying compositional reasoning in transformers.
+\newblock \emph{arXiv:2510.17469}, 2025.
+
+\bibitem[Lyu et~al.(2023)]{lyu2023dichotomy}
+K. Lyu, J. Jin, Z. Li, S.~S. Du, J.~D. Lee, and W. Hu.
+\newblock Dichotomy of early and late phase implicit biases can provably induce grokking.
+\newblock \emph{arXiv}, 2023.
+
+\bibitem[Nanda(2022)]{nanda2022transformerlens}
+N. Nanda.
+\newblock TransformerLens: A library for mechanistic interpretability of GPT-style language models, 2022.
+\newblock \url{https://github.com/neelnanda-io/TransformerLens}.
+
+\bibitem[Nanda et~al.(2023)]{nanda2023progress}
+N. Nanda, L. Chan, T. Lieberum, J. Smith, and J. Steinhardt.
+\newblock Progress measures for grokking via mechanistic interpretability.
+\newblock In \emph{ICLR}, 2023.
+
+\bibitem[Olsson et~al.(2022)]{olsson2022induction}
+C. Olsson, N. Elhage, N. Nanda, et~al.
+\newblock In-context learning and induction heads.
+\newblock \emph{Transformer Circuits Thread}, 2022.
+
+\bibitem[Power et~al.(2022)]{power2022grokking}
+A. Power, Y. Burda, H. Edwards, I. Babuschkin, and V. Misra.
+\newblock Grokking: Generalization beyond overfitting on small algorithmic datasets.
+\newblock In \emph{ICLR Workshop}, 2022.
+
+\bibitem[Roy and Vetterli(2007)]{roy2007effective}
+O. Roy and M. Vetterli.
+\newblock The effective rank: A measure of effective dimensionality.
+\newblock In \emph{EUSIPCO}, 2007.
+
+\bibitem[Wang et~al.(2025)]{wang2025twohop}
+Z. Wang et~al.
+\newblock Examining two-hop reasoning through information content scaling.
+\newblock \emph{arXiv:2502.03490}, 2025.
+
+\bibitem[Wu et~al.(2025)]{wu2025binding}
+Y. Wu, M. Khona, et~al.
+\newblock How do transformers learn variable binding in symbolic programs?
+\newblock \emph{arXiv:2505.20896}, 2025.
+
+\bibitem[Yang et~al.(2024)]{yang2024latent}
+S. Yang et~al.
+\newblock Latent multi-hop reasoning abilities in pretrained language models.
+\newblock 2024.
+
+\bibitem[Yunis et~al.(2024)]{yunis2024spectral}
+D. Yunis, M. Maire, M. Walter, et~al.
+\newblock Approaching deep learning through the spectral dynamics of weights, 2024.
+\newblock \url{https://ttic.edu/ripl/assets/publications/yunis24.pdf}.
+
+\end{thebibliography}
+
+\appendix
+
+\section{Reproducibility}
+
+All training and analysis code is under \texttt{outputs/} of the project repository. Key entry points: \texttt{scripts/train\_thesis\_additions.py}, \texttt{scripts/run\_modadd\_arch.py}, \texttt{scripts/run\_hybrid\_ffn\_head.py}, \texttt{analysis/extract\_activations.py}, \texttt{analysis/compute\_erank\_profiles.py}, \texttt{analysis/run\_causal\_ablation.py}, \texttt{analysis/run\_graded\_ablation.py}, \texttt{analysis/hybrid\_query\_diagnostics.py}, \texttt{analysis/run\_hybrid\_probe\_diagnostics.py}, \texttt{scripts/run\_aux\_retrieval\_hybrid.py}.
+
+All checkpoints, CSVs, and figures are under \texttt{outputs/}. The consolidated results manifest is \texttt{outputs/all\_recent\_experiment\_results\_for\_chatgpt.md}. Random seeds are 0, 1, 2 throughout the main 18-run sweep; single-seed pilots use seed 0.
+
+\section{Per-seed endpoint eRank tables}
+
+See \texttt{outputs/thesis\_additions/aggregate/all\_runs\_summary.csv} (per-run) and \texttt{seed\_robustness\_summary.csv} (aggregates). Per-seed values are reproduced in the consolidated manifest, Section 5.
+
+\end{document}

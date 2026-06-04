@@ -1,0 +1,4 @@
+model,query_pair,n_examples,accuracy
+hybrid_p23_m3_aux_retrieval_4layer_seed0,01,2484,1.0
+hybrid_p23_m3_aux_retrieval_4layer_seed0,02,2420,1.0
+hybrid_p23_m3_aux_retrieval_4layer_seed0,12,2397,1.0

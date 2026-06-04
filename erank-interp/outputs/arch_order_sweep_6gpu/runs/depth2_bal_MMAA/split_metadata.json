@@ -1,0 +1,12 @@
+{
+  "task": "modular_addition",
+  "p": 113,
+  "n_total": 12769,
+  "n_train": 3064,
+  "n_val": 766,
+  "n_test": 8939,
+  "train_frac": 0.3,
+  "val_frac_of_train": 0.2,
+  "seed": 0,
+  "sub_split_seed": 1
+}

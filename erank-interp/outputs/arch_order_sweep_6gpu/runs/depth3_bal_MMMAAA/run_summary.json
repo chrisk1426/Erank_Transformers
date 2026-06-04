@@ -1,0 +1,17 @@
+{
+  "run_id": "depth3_bal_MMMAAA",
+  "schedule": "MMMAAA",
+  "depth": 3,
+  "n_blocks": 6,
+  "n_params": 622720,
+  "best_val_acc": 0.09138381201044386,
+  "best_val_epoch": 49400,
+  "test_acc_at_best_val": 0.0944177201029198,
+  "test_loss_at_best_val": 8.943821498325892,
+  "final_train_acc": 1.0,
+  "final_val_acc": 0.07180156657963446,
+  "final_epoch": 50000,
+  "grokking_tau": null,
+  "status": "MEMORIZED_ONLY",
+  "elapsed_seconds": 12636.537437200546
+}
